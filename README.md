@@ -12,8 +12,8 @@ A GitHub Copilot CLI plugin bundling a full 8-phase dev lifecycle pipeline.
 
 ### Step 1 — Install plugin (once per machine)
 ```bash
-copilot plugin marketplace add YOUR-USERNAME/dev-lifecycle-agents
-copilot plugin install dev-lifecycle-agents@YOUR-USERNAME
+copilot plugin marketplace add MrKimBao/dev-lifecycle-agents
+copilot plugin install dev-lifecycle-agents@MrKimBao
 ```
 
 ### Step 2 — Setup new project (once per project)
@@ -22,18 +22,8 @@ in the project directory (orchestrator reads them via relative paths).
 
 Run the setup script from the plugin directory:
 ```bash
-# Find where the plugin was installed
-ls ~/.copilot/installed-plugins/YOUR-USERNAME/dev-lifecycle-agents/
-
-# Run setup in your new project
 cd /path/to/your-new-project
-bash ~/.copilot/installed-plugins/YOUR-USERNAME/dev-lifecycle-agents/setup-project.sh
-```
-
-Or if using local plugin dir:
-```bash
-cd /path/to/your-new-project
-bash /path/to/dev-lifecycle-agents/setup-project.sh
+bash ~/.copilot/installed-plugins/MrKimBao/dev-lifecycle-agents/setup-project.sh
 ```
 
 ### What setup-project.sh does
