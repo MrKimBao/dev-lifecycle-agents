@@ -8,16 +8,39 @@ A GitHub Copilot CLI plugin bundling a full 8-phase dev lifecycle pipeline.
 - **Skills** — dev-lifecycle, verify, tdd, debug, agent-orchestration, and more
 - **Phase reference docs** — detailed specs for all 8 phases
 
-## Install
+## Install & Setup
 
+### Step 1 — Install plugin (once per machine)
 ```bash
-copilot plugin install dev-lifecycle-agents@YOUR-GITHUB-USERNAME
+copilot plugin marketplace add YOUR-USERNAME/dev-lifecycle-agents
+copilot plugin install dev-lifecycle-agents@YOUR-USERNAME
 ```
 
-Or from local directory (for development):
+### Step 2 — Setup new project (once per project)
+The plugin agents are globally available, but skill reference files need to exist
+in the project directory (orchestrator reads them via relative paths).
+
+Run the setup script from the plugin directory:
 ```bash
-copilot --plugin-dir /path/to/dev-lifecycle-agents
+# Find where the plugin was installed
+ls ~/.copilot/installed-plugins/YOUR-USERNAME/dev-lifecycle-agents/
+
+# Run setup in your new project
+cd /path/to/your-new-project
+bash ~/.copilot/installed-plugins/YOUR-USERNAME/dev-lifecycle-agents/setup-project.sh
 ```
+
+Or if using local plugin dir:
+```bash
+cd /path/to/your-new-project
+bash /path/to/dev-lifecycle-agents/setup-project.sh
+```
+
+### What setup-project.sh does
+- Copies `skills/` → `.claude/skills/` (orchestrator reads phase references from here)
+- Creates `ai-workspace/` structure (orchestrator writes state files here)
+- Creates `docs/ai/` folders (phase 1 writes feature docs here)
+
 
 ## Usage
 
