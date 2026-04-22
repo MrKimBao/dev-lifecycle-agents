@@ -1,0 +1,45 @@
+{
+  "name": "dev-lifecycle-agents",
+  "description": "Full 8-phase dev lifecycle pipeline — agents, skills, and phase references for feature development, bug fixes, and refactoring. Includes gem-orchestrator for end-to-end coordination via /fleet.",
+  "version": "1.0.0",
+  "agents": [
+    "./agents/gem-orchestrator.agent.md",
+    "./agents/gem-implementer.agent.md",
+    "./agents/gem-researcher.agent.md",
+    "./agents/gem-reviewer.agent.md",
+    "./agents/gem-planner.agent.md",
+    "./agents/gem-debugger.agent.md",
+    "./agents/gem-designer.agent.md",
+    "./agents/gem-critic.agent.md",
+    "./agents/gem-browser-tester.agent.md",
+    "./agents/gem-documentation-writer.agent.md",
+    "./agents/requirement-intake.agent.md",
+    "./agents/review-coordinator.agent.md",
+    "./agents/knowledge-doc-auditor.agent.md",
+    "./agents/knowledge-quality-evaluator.agent.md",
+    "./agents/lifecycle-scribe.agent.md",
+    "./agents/doublecheck.agent.md",
+    "./agents/devils-advocate.agent.md",
+    "./agents/se-security-reviewer.agent.md",
+    "./agents/janitor.agent.md",
+    "./agents/polyglot-test-implementer.agent.md",
+    "./agents/polyglot-test-tester.agent.md",
+    "./agents/polyglot-test-fixer.agent.md",
+    "./agents/playwright-tester.agent.md",
+    "./agents/research-technical-spike.agent.md",
+    "./agents/bui-knowledge-builder.agent.md",
+    "./agents/bui-migrator.agent.md"
+  ],
+  "skills": [
+    "./skills/dev-lifecycle/",
+    "./skills/verify/",
+    "./skills/agent-orchestration/",
+    "./skills/tdd/",
+    "./skills/debug/",
+    "./skills/capture-knowledge/",
+    "./skills/mermaid-diagrams/",
+    "./skills/refactor/",
+    "./skills/simplify-implementation/"
+  ]
+}
+
