@@ -60,6 +60,7 @@ One state file per PR. Created on start, updated after each pipeline step, never
     "researcher":        null,   // "done" | "failed" | null
     "code_reviewer":     null,
     "security_reviewer": null,
+    "fe_reviewer":       null,   // "done" | "failed" | "skipped" | null — auto-set by researcher scope
     "doublecheck":       null,
     "coordinator":       null
   },
@@ -161,9 +162,11 @@ git fetch + worktree add
     ↓
 [B] gem-critic (conditional — "deep" keyword only)
     ↓
-[C] gem-reviewer ∥ se-security-reviewer   → parallel code + security review
-    ↓ (wait for both)
-[D] doublecheck             → filter false positives from both reviewers
+[C] gem-reviewer ∥ se-security-reviewer ∥ fe-backstage-reviewer*
+    → parallel code + security + frontend review
+    → * fe-backstage-reviewer: auto-triggered when researcher detects plugins/*/src/ files
+    ↓ (wait for all active)
+[D] doublecheck             → filter false positives from all reviewers
     ↓
 [E] review-coordinator      → synthesize → severity grouping → verdict
     ↓
@@ -231,6 +234,42 @@ If `security` keyword active → `se-security-reviewer` runs **two passes**: gen
     }
   ],
   "overall_impression": "string"
+}
+```
+
+### `fe-backstage-reviewer` — Frontend Plugin Review (conditional)
+
+**Triggers automatically** when `gem-researcher` detects changed files matching `plugins/*/src/**/*.{ts,tsx}`.
+
+Set `state.pipeline.fe_reviewer = "skipped"` and do NOT invoke the agent when:
+- No changed files under `plugins/*/src/`
+- `fast` keyword active AND no Critical/High-risk frontend patterns detected by researcher
+
+**Input:** worktree path + researcher output + list of changed frontend files
+
+Task: Review changed frontend plugin files for:
+- BUI design system compliance (BUI-first, no `makeStyles`, Remix Icons only)
+- MuiV7ThemeProvider wrapping rules (always Critical when violated)
+- React 18 patterns (hooks rules, no class components, async patterns, cleanup)
+- TypeScript quality (strict types, no implicit `any`, proper generics)
+- Testing standards (`TestApiProvider`, `MemoryRouter`, co-location)
+- Plugin structure compliance (plugin.ts, index.ts, route refs)
+
+**Output JSON:**
+```jsonc
+{
+  "findings": [
+    {
+      "severity": "MUST_FIX|SUGGESTION|NITPICK",
+      "category": "bui|react18|typescript|testing|structure|mui-compat",
+      "location": "plugins/my-plugin/src/components/MyComp.tsx:42",
+      "finding": "Description of the violation",
+      "suggestion": "Specific actionable fix"
+    }
+  ],
+  "overall_impression": "string",
+  "files_reviewed": ["plugins/..."],
+  "skipped_files": []
 }
 ```
 
@@ -338,7 +377,8 @@ START
   ↓ git fetch + worktree add  →  FAIL → ESCALATE (cannot setup worktree)
   ↓ gem-researcher             →  FAIL → ESCALATE (cannot parse diff)
   ↓ [gem-critic if deep]       →  FAIL → log to escalations[], continue
-  ↓ gem-reviewer ∥ se-security →  1 FAILS → log, continue with the other
+  ↓ gem-reviewer ∥ se-security ∥ [fe-backstage-reviewer if plugins/*/src/ changed]
+                               →  1 FAILS → log, continue with the others
   ↓ doublecheck                →  FAIL → skip filter, use raw findings
   ↓ review-coordinator         →  FAIL → ESCALATE
   ↓ write report
@@ -417,5 +457,6 @@ After pipeline completes, surface to user:
 - After every pipeline step: write updated state file before invoking next agent
 - Pass `scope_summary` from `gem-researcher` to ALL subsequent agents as context — prevents agents from reviewing code outside the PR scope
 - If `pr_author` is known: include in report header and avoid naming them negatively in findings — findings are about code, not people
-- Parallel cap: default 2 (`gem-reviewer` + `se-security-reviewer`); 4 with `fast` keyword
+- Parallel cap: default 3 (`gem-reviewer` + `se-security-reviewer` + `fe-backstage-reviewer` when triggered); 4 with `fast` keyword; 2 when `fe-backstage-reviewer` is skipped
+- `fe-backstage-reviewer` scope: pass only the changed files under `plugins/*/src/` — do not feed it backend or config files
 

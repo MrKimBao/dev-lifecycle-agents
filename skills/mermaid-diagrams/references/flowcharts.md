@@ -401,15 +401,16 @@ flowchart TD
 
 ## Best Practices
 
-1. **Use meaningful labels** - Node text should be clear and action-oriented
-2. **Consistent node shapes** - Same shapes for same types of actions
-3. **Decision nodes as diamonds** - Standard convention for yes/no decisions
-4. **Flow top-to-bottom or left-to-right** - Natural reading direction
-5. **Start and end nodes** - Use stadium/pill shapes to mark entry/exit
-6. **Group related steps** - Use subgraphs for logical groupings
-7. **Color code** - Use colors to highlight different types of actions
-8. **Minimize crossing lines** - Reorganize for clarity
-9. **Keep it focused** - One process per diagram
+1. **Emoji first** — add emoji to every node label to create instant visual anchors (see SKILL.md emoji cheat sheet)
+2. **Always use `classDef`** — color-code node types semantically; never leave nodes unstyled
+3. **Use meaningful labels** — node text should be clear, action-oriented, and include emoji
+4. **Consistent node shapes** — same shapes for same types of actions; diamonds for decisions
+5. **Flow top-to-bottom or left-to-right** — natural reading direction
+6. **Start and end nodes** — use stadium/pill `([...])` shapes, mark with 🚀 and ✅/🎉
+7. **Group related steps** — use subgraphs with colored backgrounds for logical zones
+8. **Color code semantically** — blue = normal, green = success, red = error, amber = conditional (see SKILL.md palette)
+9. **Minimize crossing lines** — reorganize for clarity or use ELK layout
+10. **Keep it focused** — one process per diagram
 
 ## Common Patterns
 

@@ -435,14 +435,15 @@ mmdc -i diagram.mmd -o output.svg -b "transparent"
 
 ## Best Practices for Advanced Features
 
-1. **Use themes consistently** - Pick one theme for related diagrams
-2. **Don't over-style** - Too many colors can reduce clarity
-3. **Test hand-drawn look** - Some diagrams work better with classic look
-4. **Use ELK for complex layouts** - When dagre creates crossed lines
-5. **Comment complex configurations** - Explain non-obvious styling choices
-6. **Keep it accessible** - Ensure sufficient color contrast
-7. **Test exports** - Verify diagrams render correctly in target format
-8. **Version control configs** - Track theme changes in your repository
+1. **House style is mandatory** — every diagram must use emoji labels + `classDef` colors (see SKILL.md Visual Style Convention)
+2. **Use themes consistently** — pick one theme for related diagrams; `base` + custom `themeVariables` gives maximum control
+3. **Colorful = readable** — vibrant, semantically distinct colors help readers scan diagrams in seconds; plain is not neutral, plain is lazy
+4. **Test hand-drawn look** — `handDrawn` works great for informal architecture sketches or documentation targeting non-technical stakeholders
+5. **Use ELK for complex layouts** — when dagre creates crossed lines with >15 nodes
+6. **Comment complex configurations** — explain non-obvious styling choices with `%%` comments
+7. **Keep it accessible** — ensure sufficient color contrast; never rely on color alone (pair with emoji or shape)
+8. **Test exports** — verify diagrams render correctly in target format (GitHub MD, Notion, Confluence)
+9. **Version control configs** — track theme changes in your repository
 
 ## Accessibility Considerations
 

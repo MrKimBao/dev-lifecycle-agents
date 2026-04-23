@@ -145,15 +145,156 @@ For in-depth guidance on specific diagram types, see:
 - **[references/architecture-diagrams.md](references/architecture-diagrams.md)** - Cloud services, infrastructure, CI/CD deployments
 - **[references/advanced-features.md](references/advanced-features.md)** - Themes, styling, configuration, layout options
 
+## 🎨 Visual Style Convention (Mandatory — Apply to Every Diagram)
+
+> This is the **house style** for all diagrams in this project. All agents generating Mermaid diagrams MUST follow these rules. No plain/unstyled diagrams.
+
+### Rule 1 — Emoji in Node Labels
+
+Add emoji to node labels wherever it makes intent immediately clear. Emoji are visual anchors — they let readers scan a diagram in seconds.
+
+```mermaid
+flowchart TD
+    A(["🚀 Deploy"]) --> B["🧪 Run Tests"]
+    B --> C{"✅ Passed?"}
+    C -->|Yes| D(["🎉 Done"])
+    C -->|No| E["🔥 Fix Errors"]
+    E --> B
+```
+
+**Emoji cheat sheet by node type:**
+
+| Context | Emoji to use |
+|---------|-------------|
+| Start / entry point | 🚀 👤 📥 🎯 |
+| Success / done / approved | ✅ 🎉 🟢 |
+| Error / failure / block | ❌ 🔥 🚨 🛑 |
+| Warning / caution | ⚠️ 🟡 |
+| Decision / gate | ❓ 🔀 |
+| Data / database | 🗄️ 💾 📦 |
+| User / person | 👤 🧑‍💻 |
+| Email / notification | 📧 🔔 |
+| Code / build | 🔨 ⚙️ 🛠️ |
+| File / document | 📄 📋 📝 |
+| Search / analysis | 🔍 🔬 |
+| Security | 🔐 🛡️ |
+| Cleanup / delete | 🧹 🗑️ |
+| Sync / update | 🔄 ♻️ |
+| Time / schedule | ⏰ 📅 |
+| Network / API | 🌐 📡 |
+| Agent / bot | 🤖 |
+
+### Rule 2 — Always Use `classDef` for Color Grouping
+
+Every flowchart must define color classes for semantically distinct node types. Use `:::className` on every node — never leave nodes unstyled.
+
+**Standard color palette (copy-paste ready):**
+
+```mermaid
+flowchart TD
+    classDef primary   fill:#3b82f6,stroke:#1d4ed8,color:#fff
+    classDef success   fill:#22c55e,stroke:#15803d,color:#fff
+    classDef warning   fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef danger    fill:#ef4444,stroke:#b91c1c,color:#fff
+    classDef purple    fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    classDef gray      fill:#6b7280,stroke:#374151,color:#fff
+    classDef orange    fill:#f97316,stroke:#c2410c,color:#fff
+    classDef pink      fill:#ec4899,stroke:#be185d,color:#fff
+    classDef teal      fill:#14b8a6,stroke:#0f766e,color:#fff
+    classDef yellow    fill:#eab308,stroke:#a16207,color:#000
+```
+
+**Semantic mapping:**
+
+| Class | Color | Use for |
+|-------|-------|---------|
+| `primary` | 🔵 Blue | Normal steps, main flow |
+| `success` | 🟢 Green | Success, done, approved, cleanup |
+| `warning` | 🟡 Amber | Conditional, optional, gate checks |
+| `danger` | 🔴 Red | Error, failure, must-fix |
+| `purple` | 🟣 Purple | Conditional/optional steps |
+| `orange` | 🟠 Orange | Escalation, alerts |
+| `teal` | 🩵 Teal | External systems, users |
+| `yellow` | 💛 Yellow | Data stores, state |
+
+### Rule 3 — Complete Styled Example
+
+This is the **target quality level** for every diagram generated in this project:
+
+```mermaid
+flowchart TD
+    classDef primary   fill:#3b82f6,stroke:#1d4ed8,color:#fff
+    classDef success   fill:#22c55e,stroke:#15803d,color:#fff
+    classDef warning   fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef danger    fill:#ef4444,stroke:#b91c1c,color:#fff
+    classDef purple    fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    classDef orange    fill:#f97316,stroke:#c2410c,color:#fff
+
+    User(["👤 User Request"]):::teal
+    A["🔍 Validate Input"]:::primary
+    B{"✅ Valid?"}:::warning
+    C["⚙️ Process Data"]:::primary
+    D[("🗄️ Save to DB")]:::yellow
+    E(["🎉 Return Success"]):::success
+    F["🔥 Return Error"]:::danger
+    ESC(["🚨 Escalate"]):::orange
+
+    User --> A --> B
+    B -->|Yes| C --> D --> E
+    B -->|No| F
+    D -->|fail| ESC
+
+    classDef teal   fill:#14b8a6,stroke:#0f766e,color:#fff
+    classDef yellow fill:#eab308,stroke:#a16207,color:#000
+```
+
+### Rule 4 — Subgraph Styling
+
+Always style subgraph backgrounds with light fills to create visual zones:
+
+```mermaid
+flowchart TB
+    subgraph frontend["🖥️ Frontend"]
+        A["⚛️ React App"]
+    end
+    subgraph backend["⚙️ Backend"]
+        B["🛠️ API Server"]
+    end
+
+    A --> B
+
+    style frontend fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
+    style backend  fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+```
+
+### Rule 5 — Sequence Diagrams With Icons
+
+For sequence diagrams, prefix participant aliases with emoji:
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 User
+    participant A as ⚙️ API
+    participant D as 🗄️ Database
+
+    U->>A: 📤 POST /login
+    A->>D: 🔍 Query credentials
+    D-->>A: 📦 Return user
+    A-->>U: ✅ 200 OK + token
+```
+
+---
+
 ## Best Practices
 
-1. **Start Simple** - Begin with core entities/components, add details incrementally
-2. **Use Meaningful Names** - Clear labels make diagrams self-documenting
-3. **Comment Extensively** - Use `%%` comments to explain complex relationships
-4. **Keep Focused** - One diagram per concept; split large diagrams into multiple focused views
-5. **Version Control** - Store `.mmd` files alongside code for easy updates
-6. **Add Context** - Include titles and notes to explain diagram purpose
-7. **Iterate** - Refine diagrams as understanding evolves
+1. **Visual first** — apply emoji + colors by default; plain diagrams are rejected
+2. **Start Simple** — Begin with core entities/components, add details and styling incrementally
+3. **Use Meaningful Names** — Clear labels + emoji make diagrams self-documenting at a glance
+4. **Comment Extensively** — Use `%%` comments to explain complex relationships
+5. **Keep Focused** — One diagram per concept; split large diagrams into multiple focused views
+6. **Version Control** — Store `.mmd` files alongside code for easy updates
+7. **Add Context** — Include titles and notes to explain diagram purpose
+8. **Iterate** — Refine diagrams as understanding evolves
 
 ## Configuration and Theming
 
