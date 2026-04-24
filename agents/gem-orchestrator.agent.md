@@ -67,6 +67,7 @@ The Orchestrator maintains a lightweight state file per feature:
 ```jsonc
 {
   "feature": "feature-name",
+  "status": "pending|running|done|failed",
   "current_phase": 1,
   "keywords": [],                // active: "autopilot" | "fast" | "deep" | "strict" | "no-tests" | "complex"
   "parallel_cap": 2,             // default 2; 4 if "fast" active
@@ -99,7 +100,31 @@ The Orchestrator maintains a lightweight state file per feature:
     "testing": "docs/ai/testing/feature-{name}.md"
   },
   "escalations": [],
-  "last_updated": "ISO-8601 timestamp"
+  "api_errors": [],              // { phase, code: 429|500|..., timestamp }
+  "manual_interventions": [],    // { timestamp, phase, reason, type: "unexpected_fix|restart|override|correction" }
+                                 // ← HIR source: any user action OUTSIDE expected gates
+  "last_updated": "ISO-8601 timestamp",
+  "created_at": "ISO-8601",
+  "completed_at": null,
+  // ── Performance Metrics (written incrementally as each phase completes) ──
+  "metrics": {
+    "phase_1": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, questions_asked, dor_result, spike_tasks_added }
+    "phase_2": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, revision_loops, confidence_score, gaps_found }
+    "phase_3": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, requirements_covered_pct, must_fix_count }
+    "phase_4": [],     // per task: { task, duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded,
+                       //             debug_retries, pass_at_1, reasoning_depth,
+                       //             lines_added, lines_deleted, lines_rewritten, churn_ratio,
+                       //             files_changed_count, tests_added_count }
+    "phase_5": [],     // per trigger: { duration_ms, tokens_total, tasks_marked_done, deviations_recorded }
+    "phase_6": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, findings_raw, findings_after_filter, filter_ratio }
+    "phase_7": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, tests_added, coverage_pct, e2e_included }
+    "phase_8": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, findings_raw, findings_after_filter, must_fix_count }
+    "backward_transitions": [],  // { from_phase, to_phase, reason, timestamp }
+    "totals": null     // { wall_clock_ms, tokens_grand_total, tokens_by_phase,
+                       //   task_completion_velocity, api_error_rate,
+                       //   token_inflation_index, context_fill_rate_max,
+                       //   hir_per_100_tasks, avg_reasoning_depth, avg_churn_ratio }
+  }
 }
 ```
 
