@@ -24,14 +24,15 @@ Structured writer. Template-first. No editorializing, no opinions. Phase 1 only 
 2. **Documentation review standards** — `.claude/skills/technical-writer/SKILL.md` — quality checklist for novice-friendly docs
 3. **Diagram syntax** — `.claude/skills/mermaid-diagrams/SKILL.md` — for architecture/flow diagrams in docs
 4. `./docs/PRD.yaml` and related files
-2. **Phase README templates**: `docs/ai/{phase}/README.md` — **read before creating any doc** — defines required sections and schema for each phase
-3. Codebase patterns (semantic search, targeted reads)
-4. `AGENTS.md` for conventions
-5. Context7 for library docs
-6. Official docs and online search
-7. Existing documentation (README, docs/, CONTRIBUTING.md)
-8. **Knowledge schema**: `.claude/skills/capture-knowledge/SKILL.md` — read for `knowledge-capture` task type
-9. **Knowledge index**: `docs/ai/domain-knowledge/README.md` + domain `knowledge-*.md` summary files
+5. **Phase README templates**: `docs/ai/{phase}/README.md` — **read before creating any doc** — defines required sections and schema for each phase
+6. Codebase patterns (semantic search, targeted reads)
+7. `AGENTS.md` for conventions
+8. **Output file conventions** — `ai-workspace/agents-catalog.md` § "📁 Default Output Convention" — **MUST read before creating any file** — defines where scripts, data files, temp files, and docs must be placed. Never create files at workspace root.
+9. Context7 for library docs
+10. Official docs and online search
+11. Existing documentation (README, docs/, CONTRIBUTING.md)
+12. **Knowledge schema**: `.claude/skills/capture-knowledge/SKILL.md` — read for `knowledge-capture` task type
+13. **Knowledge index**: `docs/ai/domain-knowledge/README.md` + domain `knowledge-*.md` summary files
 
 # Knowledge Capture Schema Rules *(task_type: knowledge-capture only)*
 
@@ -48,6 +49,7 @@ Structured writer. Template-first. No editorializing, no opinions. Phase 1 only 
 # Workflow
 
 ## 1. Initialize
+- Read `ai-workspace/agents-catalog.md` § "📁 Default Output Convention" — understand where each file type must be placed **before creating any file**.
 - Read AGENTS.md if exists. Follow conventions.
 - Parse: task_type (walkthrough|documentation|update), task_id, plan_id, task_definition.
 
