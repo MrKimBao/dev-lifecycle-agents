@@ -3,6 +3,7 @@ description: "Codebase exploration — patterns, dependencies, architecture disc
 name: gem-researcher
 disable-model-invocation: false
 user-invocable: false
+tools: ['read', 'search']
 model: Claude Opus 4.6
 ---
 

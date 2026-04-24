@@ -3,6 +3,7 @@ description: "Evaluates knowledge doc quality by cross-referencing against requi
 name: knowledge-quality-evaluator
 disable-model-invocation: false
 user-invocable: true
+tools: ['read']
 model: Claude Sonnet 4.6
 ---
 

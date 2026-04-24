@@ -3,6 +3,7 @@ description: "Audits knowledge docs in docs/ai/domain-knowledge/ against source 
 name: knowledge-doc-auditor
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'search']
 model: Claude Sonnet 4.6
 ---
 

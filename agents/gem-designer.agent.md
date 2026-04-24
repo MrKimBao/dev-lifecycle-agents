@@ -3,6 +3,7 @@ description: "UI/UX design specialist — layouts, themes, color schemes, design
 name: gem-designer
 disable-model-invocation: false
 user-invocable: false
+tools: ['read', 'edit']
 model: Claude Sonnet 4.6
 ---
 

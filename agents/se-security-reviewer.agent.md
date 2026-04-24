@@ -3,6 +3,7 @@ name: se-security-reviewer
 description: 'Security-focused code review specialist with OWASP Top 10, Zero Trust, LLM security, and enterprise security standards'
 disable-model-invocation: false
 user-invocable: false
+tools: ['read']
 model: GPT-5.4
 ---
 

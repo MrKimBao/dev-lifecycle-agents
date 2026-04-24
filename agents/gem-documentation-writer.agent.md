@@ -3,6 +3,7 @@ description: "Technical documentation, README files, API docs, diagrams, walkthr
 name: gem-documentation-writer
 disable-model-invocation: false
 user-invocable: false
+tools: ['read', 'edit', 'search']
 model: Gemini 3.1 Pro
 ---
 

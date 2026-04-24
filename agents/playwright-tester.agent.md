@@ -3,6 +3,7 @@ description: "Testing mode for Playwright tests"
 name: playwright-tester
 disable-model-invocation: false
 user-invocable: true
+tools: ['web', 'edit', 'execute']
 model: Claude Haiku 4.5
 ---
 

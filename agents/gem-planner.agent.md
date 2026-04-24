@@ -4,6 +4,7 @@ name: gem-planner
 argument-hint: "Enter plan_id, objective, complexity (simple|medium|complex), and task_clarifications."
 disable-model-invocation: false
 user-invocable: false
+tools: ['read', 'edit']
 model: Claude Sonnet 4.6
 ---
 

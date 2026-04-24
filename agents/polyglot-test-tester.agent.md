@@ -3,6 +3,7 @@ description: 'Runs test commands for any language and reports results. Discovers
 name: polyglot-test-tester
 disable-model-invocation: false
 user-invocable: false
+tools: ['execute']
 model: Gemini 3 Flash
 ---
 

@@ -3,6 +3,7 @@ description: "E2E browser testing, UI/UX validation, visual regression, Playwrig
 name: gem-browser-tester
 disable-model-invocation: false
 user-invocable: true
+tools: ['web']
 model: Claude Haiku 4.5
 ---
 

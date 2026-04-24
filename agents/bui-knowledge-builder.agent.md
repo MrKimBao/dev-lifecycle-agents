@@ -3,6 +3,7 @@ description: "Crawls ui.backstage.io to build a fresh BUI component knowledge ca
 name: bui-knowledge-builder
 disable-model-invocation: false
 user-invocable: true
+tools: ['web', 'edit']
 model: Claude Sonnet 4.6
 ---
 

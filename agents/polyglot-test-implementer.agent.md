@@ -3,6 +3,7 @@ description: 'Implements a single phase from the test plan. Writes test files an
 name: polyglot-test-implementer
 disable-model-invocation: false
 user-invocable: false
+tools: ['read', 'edit', 'execute', 'agent']
 model: GPT-5.3 Codex
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: memory
-description: Use AI DevKit's memory service to store and retrieve knowledge via CLI commands instead of MCP.
+description: 'Use AI DevKit memory service to store and retrieve knowledge via CLI commands instead of MCP. Use when saving a key decision, storing a coding pattern, persisting guidelines across sessions, or searching for previously saved knowledge. Triggers: remember this, store knowledge, search memory, recall, persist across sessions, memory store, memory search.'
 ---
 
 # AI DevKit Memory Skill

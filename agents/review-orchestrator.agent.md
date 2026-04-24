@@ -3,6 +3,7 @@ description: "Orchestrates AI-powered PR/MR code review for team members. Create
 name: review-orchestrator
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'edit', 'execute', 'agent']
 model: Claude Sonnet 4.6
 ---
 

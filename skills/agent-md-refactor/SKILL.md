@@ -1,6 +1,6 @@
 ---
 name: agent-md-refactor
-description: Refactor bloated AGENTS.md, CLAUDE.md, or similar agent instruction files to follow progressive disclosure principles. Splits monolithic files into organized, linked documentation.
+description: 'Refactor bloated AGENTS.md, CLAUDE.md, or similar agent instruction files to follow progressive disclosure principles. Use when an agent instruction file is too long, hard to scan, or needs to be split into linked sub-documents. Triggers: refactor AGENTS.md, slim agent instructions, bloated CLAUDE.md, progressive disclosure, reorganize agent file.'
 license: MIT
 ---
 

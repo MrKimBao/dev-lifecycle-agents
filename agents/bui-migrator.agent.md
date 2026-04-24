@@ -3,6 +3,7 @@ description: "Migrates a Backstage plugin from Material-UI (MUI) to Backstage UI
 name: bui-migrator
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'edit', 'execute', 'agent']
 model: Claude Opus 4.6
 ---
 

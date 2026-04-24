@@ -3,6 +3,7 @@ description: "Synthesis Coordinator for review phases in the dev-lifecycle. Rece
 name: review-coordinator
 disable-model-invocation: false
 user-invocable: false
+tools: ['read']
 model: Claude Sonnet 4.6
 ---
 

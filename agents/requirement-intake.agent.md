@@ -3,6 +3,7 @@ description: "Entry point for all new feature requests in the dev-lifecycle. Val
 name: requirement-intake
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'edit', 'search', 'agent']
 model: Claude Sonnet 4.6
 ---
 

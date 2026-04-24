@@ -3,6 +3,7 @@ description: "I play the devil's advocate to challenge and stress-test your idea
 name: devils-advocate
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'search']
 model: Claude Sonnet 4.6
 ---
 

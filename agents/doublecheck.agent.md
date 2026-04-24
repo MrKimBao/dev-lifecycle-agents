@@ -2,7 +2,8 @@
 description: 'Interactive verification agent for AI-generated output. Runs a three-layer pipeline (self-audit, source verification, adversarial review) and produces structured reports with source links for human review.'
 name: doublecheck
 disable-model-invocation: false
-user-invocable: true
+user-invocable: false
+tools: ['read']
 model: Claude Haiku 4.5
 ---
 

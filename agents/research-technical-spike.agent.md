@@ -3,6 +3,7 @@ description: "Systematically research and validate technical spike documents thr
 name: research-technical-spike
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'search', 'execute']
 model: Claude Sonnet 4.6
 ---
 

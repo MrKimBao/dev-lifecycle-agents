@@ -4,6 +4,7 @@ name: fe-backstage-reviewer
 argument-hint: "Provide files or plugin path to review. Optionally specify review focus: conventions | react | typescript | tests | structure | all (default: all)."
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'search']
 model: GPT-5.3 Codex
 ---
 

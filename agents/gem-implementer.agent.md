@@ -4,6 +4,7 @@ name: gem-implementer
 argument-hint: "Enter task_id, plan_id, plan_path, and task_definition with tech_stack to implement."
 disable-model-invocation: false
 user-invocable: false
+tools: ['read', 'edit', 'execute', 'search']
 model: Claude Opus 4.6
 ---
 

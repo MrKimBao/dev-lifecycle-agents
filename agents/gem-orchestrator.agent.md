@@ -3,6 +3,7 @@ description: "Coordinates all agents in the dev-lifecycle flow. Routes phases, m
 name: gem-orchestrator
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'edit', 'search', 'execute', 'agent']
 model: Claude Sonnet 4.6
 ---
 

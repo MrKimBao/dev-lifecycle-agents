@@ -3,6 +3,7 @@ description: 'Fixes compilation errors in source or test files. Analyzes error m
 name: polyglot-test-fixer
 disable-model-invocation: false
 user-invocable: false
+tools: ['read', 'edit', 'execute']
 model: GPT-5.3 Codex Mini
 ---
 

@@ -3,6 +3,7 @@ description: 'Perform janitorial tasks on any codebase including cleanup, simpli
 name: janitor
 disable-model-invocation: false
 user-invocable: true
+tools: ['read', 'edit']
 model: Gemini 3 Flash
 ---
 
