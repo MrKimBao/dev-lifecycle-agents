@@ -107,24 +107,46 @@ The Orchestrator maintains a lightweight state file per feature:
   "last_updated": "ISO-8601 timestamp",
   "created_at": "ISO-8601",
   "completed_at": null,
+  // ── Reasoning Trace (written by Orchestrator after every doublecheck combined-mode invocation) ──
+  "reasoning_trace": [],
+  // Each entry: {
+  //   "phase": 4,
+  //   "step": "task-1",                        // phase task or step label
+  //   "agent": "gem-implementer",
+  //   "technique_expected": "ReAct",           // technique declared in agents-catalog.md
+  //   "signals_found": [                       // observable evidence doublecheck detected
+  //     "thought_chain_visible",               // reasoning rendered before conclusion
+  //     "alternatives_explored_2",             // ToT: N alternatives listed
+  //     "evidence_cited",                      // claim backed by file:line or MCP result
+  //     "action_observation_cycle"             // ReAct: Thought→Action→Observation visible
+  //   ],
+  //   "flags": [                               // anti-patterns doublecheck detected
+  //     "jumped_to_conclusion",                // conclusion appeared before reasoning
+  //     "single_path_only",                    // ToT expected but only 1 option explored
+  //     "no_evidence_cited"                    // CoT/ReAct finding with no code reference
+  //   ],
+  //   "quality_score": 0.85,                   // 0.0–1.0; avg of signal_rate and flag_penalty
+  //   "timestamp": "ISO-8601"
+  // }
   // ── Performance Metrics (written incrementally as each phase completes) ──
   "metrics": {
     "phase_1": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, questions_asked, dor_result, spike_tasks_added }
-    "phase_2": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, revision_loops, confidence_score, gaps_found }
-    "phase_3": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, requirements_covered_pct, must_fix_count }
+    "phase_2": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, revision_loops, confidence_score, gaps_found, avg_reasoning_quality }
+    "phase_3": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, requirements_covered_pct, must_fix_count, avg_reasoning_quality }
     "phase_4": [],     // per task: { task, duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded,
-                       //             debug_retries, pass_at_1, reasoning_depth,
+                       //             debug_retries, pass_at_1, reasoning_depth, reasoning_quality,
                        //             lines_added, lines_deleted, lines_rewritten, churn_ratio,
                        //             files_changed_count, tests_added_count }
     "phase_5": [],     // per trigger: { duration_ms, tokens_total, tasks_marked_done, deviations_recorded }
-    "phase_6": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, findings_raw, findings_after_filter, filter_ratio }
+    "phase_6": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, findings_raw, findings_after_filter, filter_ratio, avg_reasoning_quality }
     "phase_7": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, tests_added, coverage_pct, e2e_included }
-    "phase_8": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, findings_raw, findings_after_filter, must_fix_count }
+    "phase_8": null,   // { duration_ms, tokens_total, tokens_input, context_fill_rate, context_budget_exceeded, findings_raw, findings_after_filter, must_fix_count, avg_reasoning_quality }
     "backward_transitions": [],  // { from_phase, to_phase, reason, timestamp }
     "totals": null     // { wall_clock_ms, tokens_grand_total, tokens_by_phase,
                        //   task_completion_velocity, api_error_rate,
                        //   token_inflation_index, context_fill_rate_max,
-                       //   hir_per_100_tasks, avg_reasoning_depth, avg_churn_ratio }
+                       //   hir_per_100_tasks, avg_reasoning_depth, avg_churn_ratio,
+                       //   avg_reasoning_quality }       // ← mean quality_score across all reasoning_trace entries
   }
 }
 ```
@@ -289,7 +311,7 @@ Invoke review pipeline in sequence:
 1. `knowledge-doc-auditor` — structural audit
 2. `knowledge-quality-evaluator` — requirement coverage verdicts
 3. `gem-critic` + `devils-advocate` (**parallel** unless `seq` active — then sequential) *(skip both if `fast`)*
-4. `doublecheck` — filter hallucinations from critic outputs
+4. `doublecheck` — invoke with `mode: "combined"` → (a) filter hallucinations from critic outputs + (b) audit reasoning quality of each critic agent → write `reasoning_quality[]` entries to `state.reasoning_trace`
 5. `review-coordinator` — synthesize → final verdict
 
 | `review-coordinator` verdict | Action |
@@ -415,7 +437,7 @@ Invoke review pipeline:
    - Scope: all `[fe]`-tagged changed files
    - Checks: BUI compliance, React 18 patterns, no MUI leaks, no `import React`, direct imports, CSS Modules, MuiV7ThemeProvider usage
    - Output feeds into `doublecheck` alongside gem-reviewer output
-4. `doublecheck` — filter hallucinations from all reviewer outputs
+4. `doublecheck` — invoke with `mode: "combined"` → (a) filter hallucinations from all reviewer outputs + (b) audit reasoning quality of each reviewer → write entries to `state.reasoning_trace`
 5. `review-coordinator` — final verdict
 
 | `review-coordinator` verdict | Action |
@@ -464,7 +486,7 @@ Invoke test pipeline:
 
 Invoke review pipeline:
 1. `gem-reviewer` + `se-security-reviewer` (**parallel** unless `seq` active — then sequential)
-2. `doublecheck` — filter hallucinations
+2. `doublecheck` — invoke with `mode: "combined"` → (a) filter hallucinations + (b) audit reasoning quality of reviewer agents → write entries to `state.reasoning_trace`
 3. `janitor` — cleanup pass
 4. `devils-advocate` — final stress-test
 5. `knowledge-doc-auditor` — docs completeness
@@ -526,16 +548,29 @@ To resume after fix: "continue feature {feature}"
 
 After each phase transition, Orchestrator surfaces a status to user:
 
-```jsonc
-{
-  "feature": "feature-name",
-  "completed_phase": 3,
-  "next_phase": 4,
-  "gate": true,                        // true = waiting for user confirmation
-  "summary": "Phase 3 approved. Design is aligned with all requirements.",
-  "action_required": "Confirm to start Phase 4 implementation."
-}
 ```
+✅ Phase {N} — {verdict}
+
+{summary}
+
+🧠 Reasoning Quality
+| Agent | Technique | Score | Verdict |
+|-------|-----------|-------|---------|
+| gem-critic        | 🌳 ToT  | 0.90 | 🟢 Effective |
+| devils-advocate   | 🌳 ToT  | 0.62 | 🟡 Partial   |
+| gem-reviewer      | 🔗 CoT  | 0.45 | 🔴 Weak      |
+
+> Scores are advisory — they do not affect phase outcome.
+
+{action_required}
+```
+
+Rules for the Reasoning Quality block:
+- **Only show** if `doublecheck` was invoked with `mode: "combined"` in this phase (P2, P3, P6, P8)
+- **Skip the block entirely** if no `reasoning_trace` entries exist for this phase
+- **Sort rows** by `quality_score` ascending — lowest scores first (most actionable at top)
+- **Show max 5 rows** — truncate with `… and N more` if more agents were audited
+- **Do NOT show** in Phase 4/5/7 transitions — those phases don't run `doublecheck`
 
 ## Final Feature Summary (Phase 8 → READY_TO_PUSH)
 
@@ -557,6 +592,7 @@ P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6 ✅ · P6.5 ✅ · P7 ✅ �
 | **Token inflation index** | {totals.token_inflation_index}× |
 | **Backward transitions** | {backward_transitions.length} |
 | **HIR** | {hir_per_100_tasks} / 100 tasks |
+| **Avg reasoning quality** | {totals.avg_reasoning_quality} / 1.0 |
 
 Proceed to push? (Reply 'yes' to push, or 'no' to abort)
 ```

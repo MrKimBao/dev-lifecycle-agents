@@ -4,7 +4,7 @@ name: regraph-reviewer
 argument-hint: 'Provide changed files or plugin path to review. Must contain ReGraph usage.'
 disable-model-invocation: false
 user-invocable: true
-tools: ['read', 'search']
+tools: ['read', 'search', 'regraph/*']
 model: Claude Sonnet 4.5
 ---
 
