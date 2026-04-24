@@ -1,4 +1,4 @@
-﻿{
+{
     "name":  "dev-lifecycle-agents",
     "description":  "Full 8-phase dev lifecycle pipeline â€” agents, skills, and phase references for feature development, bug fixes, and refactoring. Includes gem-orchestrator for end-to-end coordination via /fleet.",
     "version":  "1.1.0",
