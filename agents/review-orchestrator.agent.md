@@ -23,7 +23,7 @@ Focused, precise, non-intrusive. Runs silently in the background while the user 
 Load only what is needed — do NOT load all files at once.
 
 1. **State file** — `ai-workspace/temp/review-state-pr-{id}.json` — read on EVERY invocation before anything else
-2. **Pipeline summary** — `ai-workspace/review-orchestrator-summary.md` — full pipeline spec, worktree lifecycle, partial failure policy
+2. **Pipeline summary** — `ai-workspace/review-lifecycle/review-lifecycle-summary.md` — full pipeline spec, step index, worktree lifecycle, partial failure policy, verdict logic
 3. **Agent catalog** — `ai-workspace/agents-catalog.md` — agent descriptions and invocation patterns
 4. **Completion evidence** — `.claude/skills/verify/SKILL.md` — never claim review done without fresh output
 

@@ -242,7 +242,7 @@ flowchart TD
     User --> A --> B
     B -->|Yes| C --> D --> E
     B -->|No| F
-    D -->|fail| ESC
+    D -->|❌ fail| ESC
 
     classDef teal   fill:#14b8a6,stroke:#0f766e,color:#fff
     classDef yellow fill:#eab308,stroke:#a16207,color:#000
@@ -282,6 +282,40 @@ sequenceDiagram
     D-->>A: 📦 Return user
     A-->>U: ✅ 200 OK + token
 ```
+
+### Rule 6 — Edge Types for Failure and Retry Paths
+
+Use **different arrow types and labels** to visually distinguish flow types. Readers should instantly understand whether an edge is a normal forward step, a warning retry, or a hard stop.
+
+| Edge type | Syntax | When to use |
+|-----------|--------|-------------|
+| **Happy path** | `A --> B` | Normal forward flow |
+| **Hard fail / ESCALATE** (pipeline stops) | `A -->|❌ reason| ESC` | Agent failure that cannot be recovered — escalation node required |
+| **Soft fail / retry** (flow continues differently) | `A -. ⚠️ reason .-> B` | Backward transitions, retry loops, recoverable deviations |
+| **Optional / skippable path** | `A -.-> B` | Autopilot paths, conditional skips |
+
+**Example — pipeline with all three types:**
+
+```mermaid
+flowchart TD
+    classDef step    fill:#0f766e,stroke:#0d5e56,color:#fff
+    classDef gate    fill:#f59e0b,stroke:#b45309,color:#000
+    classDef esc     fill:#f97316,stroke:#c2410c,color:#fff
+    classDef done    fill:#22c55e,stroke:#15803d,color:#fff
+
+    A["⚙️ Step 1"]:::step --> B["🔍 Step 2"]:::step
+    B --> C{"✅ Gate"}:::gate
+    C -->|confirmed| D(["🎉 Done"]):::done
+    C -.->|autopilot| D
+    B -. ⚠️ needs revision .-> A
+    B -->|❌ fatal error| ESC(["🚨 Escalate"]):::esc
+```
+
+**Key rules:**
+- `❌` label = pipeline STOPS, escalation node required downstream
+- `⚠️` dotted = flow redirects but continues — no hard stop
+- Dotted without label = optional/skippable (autopilot, conditional)
+- Backward edges (against main flow direction) SHOULD use dotted to reduce visual noise
 
 ---
 

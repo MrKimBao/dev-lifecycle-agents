@@ -70,6 +70,11 @@ The Orchestrator maintains a lightweight state file per feature:
   "current_phase": 1,
   "keywords": [],                // active: "autopilot" | "fast" | "deep" | "strict" | "no-tests" | "complex"
   "parallel_cap": 2,             // default 2; 4 if "fast" active
+  "domain": {
+    "has_frontend": false,       // true if feature touches UI components, routes, styles, interactions
+    "has_backend": true,         // true if feature touches API, router, DB, services
+    "fe_bui_annotations": null   // path to BUI annotation block appended to design doc after Phase 3
+  },
   "iteration_counts": {
     "phase_1_to_2": 0,
     "phase_3": 0,
@@ -152,19 +157,30 @@ Append to any invocation to modify behavior. Multiple keywords can be combined.
      ✅ Proceed with this command? Or tell me which keywords to add / remove.
      ```
    - Wait for user confirmation or adjustment — do NOT auto-start
-4. **Run lint check** — verify `docs/ai/` structure is valid:
+4. **Detect domain type** — classify whether the feature touches frontend and/or backend:
+   - Scan feature description + planning doc (if exists) for signals:
+     - **Frontend signals:** "component", "UI", "page", "route", "style", "button", "table", "plugin", "BUI", "MUI", "CSS", "React", "layout", "view", "screen", plugin folder names in `plugins/*` (non-backend)
+     - **Backend signals:** "API", "router", "endpoint", "service", "DB", "migration", "backend", folder names in `plugins/*-backend`
+   - Set `state.domain.has_frontend` and `state.domain.has_backend` accordingly
+   - If ambiguous → default both to `true`
+   - Surface detection result to user in the recommendation block:
+     ```
+     🏗️ Domain: {Frontend ✅ | ❌} / {Backend ✅ | ❌}
+     ```
+
+5. **Run lint check** — verify `docs/ai/` structure is valid:
    ```bash
    npx ai-devkit@latest lint
    npx ai-devkit@latest lint --feature <feature-name>
    ```
    If lint fails → run `npx ai-devkit@latest init`, then rerun. **Do not proceed until checks pass.**
-5. **Detect current phase** (for `continue` intent only):
+6. **Detect current phase** (for `continue` intent only):
    ```bash
    <skill-dir>/scripts/check-status.sh <feature-name>
    ```
    Use the suggested phase — do not guess from memory.
-6. **Worktree setup is disabled.** User manages branches manually (creates branch from main based on ticket ID before invoking Orchestrator). On `start feature` intent → verify the current branch is not `main` or `master`, then proceed directly to Phase 1 on the current branch. If current branch IS `main`/`master` → warn user and stop: *"⚠️ You appear to be on main. Please switch to your feature branch first, then re-invoke."*
-7. Confirm feature + current phase with user in 1 line, then enter main routing loop.
+7. **Worktree setup is disabled.** User manages branches manually (creates branch from main based on ticket ID before invoking Orchestrator). On `start feature` intent → verify the current branch is not `main` or `master`, then proceed directly to Phase 1 on the current branch. If current branch IS `main`/`master` → warn user and stop: *"⚠️ You appear to be on main. Please switch to your feature branch first, then re-invoke."*
+8. Confirm feature + current phase with user in 1 line, then enter main routing loop.
 
 ---
 
@@ -268,9 +284,20 @@ Invoke review pipeline:
 1. `gem-researcher` — codebase pattern check
 2. `gem-critic` — architecture critic *(skip if `fast`)*
 3. `research-technical-spike` — conditional: only if spike tasks in planning doc
-4. **Pre-mortem** — conditional: only if `complex` keyword active → invoke `gem-planner` with `complexity=complex` to produce `pre_mortem` section before design is approved
-5. `knowledge-quality-evaluator` — design coverage matrix
-6. `review-coordinator` — final verdict
+4. **BUI Knowledge Check + Annotation** — conditional: only if `state.domain.has_frontend = true`
+   - **Step 4a — Knowledge seed:** Invoke `bui-knowledge-builder`
+     - Checks `@backstage/ui` version in `packages/app/package.json` vs version header in `docs/ai/domain-knowledge/bui-components.md`
+     - If catalog **missing or stale** → crawls `ui.backstage.io`, rebuilds catalog (full auto, no user confirmation needed)
+     - If catalog **already fresh** → returns `status: skipped` immediately (zero overhead)
+     - **If crawl fails** → escalate to user: *"BUI catalog unavailable. `fe-backstage-reviewer` will annotate from AGENTS.md + coding-standards only — lower confidence. Proceed?"*
+   - **Step 4b — Design annotation:** Invoke `fe-backstage-reviewer` with role `BUI Design Annotator`
+     - Reads `docs/ai/domain-knowledge/bui-components.md` (from 4a) as primary reference
+     - Enriches design doc with BUI-specific component constraints under `## BUI Design Constraints`
+     - Store path in `state.domain.fe_bui_annotations`
+     - `gem-implementer` in Phase 4 FE stream MUST read this block before implementing
+5. **Pre-mortem** — conditional: only if `complex` keyword active → invoke `gem-planner` with `complexity=complex` to produce `pre_mortem` section before design is approved
+6. `knowledge-quality-evaluator` — design coverage matrix
+7. `review-coordinator` — final verdict
 
 | `review-coordinator` verdict | Action |
 |---|---|
@@ -291,14 +318,22 @@ Invoke review pipeline:
 
 > 💡 **`/fleet` integration:** When running under `/fleet`, this Orchestrator IS the main agent. Tasks marked as parallel in the wave below are dispatched as subagents by `/fleet`. The `state.parallel_cap` value tells the Orchestrator how many subagents to spawn simultaneously. Tasks with `conflicts_with` populated must run serially — pass this constraint explicitly when spawning subagents.
 
+> 🏗️ **Domain routing:** When `state.domain.has_frontend = true` AND `has_backend = true`, tasks in each wave are split into two streams. `[fe]`-tagged tasks go to the FE stream (BUI-aware). `[be]`-tagged tasks go to the BE stream (standard). Both streams run in parallel (subject to `parallel_cap`), then merge before the next wave. If a task has no `[fe]` or `[be]` tag → default to `[be]` stream.
+
 ```
 for each wave in plan.yaml (wave 1, 2, 3...):
     tasks_in_wave = tasks where task.wave == current_wave
-    parallel_tasks = tasks where conflicts_with is empty (or no overlap with running tasks)
-    serial_tasks   = tasks where conflicts_with overlaps with parallel_tasks
 
-    run parallel_tasks concurrently (cap = state.parallel_cap)
-    run serial_tasks sequentially within wave
+    if has_frontend AND has_backend:
+        fe_tasks = tasks tagged [fe]
+        be_tasks = tasks tagged [be] or untagged
+        run fe_tasks (FE stream) + be_tasks (BE stream) in parallel (cap = state.parallel_cap)
+    else:
+        parallel_tasks = tasks where conflicts_with is empty
+        serial_tasks   = tasks where conflicts_with overlaps with running tasks
+        run parallel_tasks concurrently (cap = state.parallel_cap)
+        run serial_tasks sequentially within wave
+
     wait for all wave tasks to complete before next wave
 ```
 
@@ -310,6 +345,11 @@ for each wave in plan.yaml (wave 1, 2, 3...):
    - If bug **cannot be reproduced** → stop, escalate to user with reproduction notes. Do NOT implement a fix for an unconfirmed bug.
    - If bug **reproduced** → pass repro steps + browser evidence to `gem-implementer` as context
 3. `gem-implementer` — TDD implementation
+   - **BE stream** (`[be]` task or `has_frontend = false`): standard invocation
+   - **FE stream** (`[fe]` task AND `has_frontend = true`): inject additional context:
+     - Read `state.domain.fe_bui_annotations` path → include BUI Design Constraints block as mandatory input
+     - Read `.github/coding-standards.md` → BUI-first rules, no MUI, no JSDoc, direct imports
+     - Instruction suffix: *"You MUST follow BUI Design Constraints in the design doc. Use BUI components as annotated. Never use MUI directly — wrap with MuiV7ThemeProvider only if unavoidable and documented in design."*
 3. `gem-debugger` (conditional — **error recovery**):
    - If `gem-implementer` returns `blocked`:
      - Invoke `gem-debugger` → get `root_cause` + `fix_recommendations`
@@ -341,8 +381,13 @@ Invoke `lifecycle-scribe` — reconcile planning doc.
 Invoke review pipeline:
 1. `knowledge-doc-auditor` — drift check vs design doc
 2. `gem-reviewer` + `se-security-reviewer` (parallel) — code review
-3. `doublecheck` — filter hallucinations
-4. `review-coordinator` — final verdict
+3. `fe-backstage-reviewer` — conditional: only if `state.domain.has_frontend = true`
+   - Runs in **parallel** with step 2
+   - Scope: all `[fe]`-tagged changed files
+   - Checks: BUI compliance, React 18 patterns, no MUI leaks, no `import React`, direct imports, CSS Modules, MuiV7ThemeProvider usage
+   - Output feeds into `doublecheck` alongside gem-reviewer output
+4. `doublecheck` — filter hallucinations from all reviewer outputs
+5. `review-coordinator` — final verdict
 
 | `review-coordinator` verdict | Action |
 |---|---|
