@@ -1,7 +1,7 @@
 {
     "name":  "dev-lifecycle-agents",
-    "description":  "Full 8-phase dev lifecycle pipeline Ã¢â‚¬â€ agents, skills, and phase references for feature development, bug fixes, and refactoring. Includes gem-orchestrator for end-to-end coordination via /fleet.",
-    "version":  "1.2.0",
+    "description":  "Full 8-phase dev lifecycle pipeline ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â agents, skills, and phase references for feature development, bug fixes, and refactoring. Includes gem-orchestrator for end-to-end coordination via /fleet.",
+    "version":  "1.2.1",
     "author":  {
                    "name":  "Bao Huynh"
                },

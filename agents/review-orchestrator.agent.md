@@ -215,6 +215,18 @@ Task: Review architectural decisions, design patterns, coupling, abstractions.
 
 > ⚡ **`seq` keyword:** If `seq` is active, run `gem-reviewer` → `se-security-reviewer` → `fe-backstage-reviewer` one at a time (cap = 1). Otherwise all active agents run in parallel (cap = 3 default; 4 with `fast`). `seq` overrides `fast`.
 
+> 📦 **Findings accumulation (MANDATORY):** Regardless of `seq` or parallel mode, the Orchestrator **MUST** accumulate findings from each reviewer into a buffer as they complete. Step 4 (`doublecheck`) is invoked **exactly once** — only after ALL Step C agents have finished — receiving the combined findings buffer. Never pass partial findings to Step 4 mid-way through Step C.
+>
+> ```
+> // Orchestrator internal buffer — written after each Step C agent completes
+> findings_buffer = {
+>   "3a": null,   // set after gem-reviewer done
+>   "3b": null,   // set after se-security-reviewer done
+>   "3c": null    // set after fe-backstage-reviewer done (or "skipped")
+> }
+> // → invoke Step 4 only when ALL expected entries are non-null
+> ```
+
 Both agents receive: researcher output + worktree path + diff content
 
 ### `gem-reviewer` — General Code Review
@@ -464,4 +476,5 @@ After pipeline completes, surface to user:
 - If `pr_author` is known: include in report header and avoid naming them negatively in findings — findings are about code, not people
 - Parallel cap: default 3 (`gem-reviewer` + `se-security-reviewer` + `fe-backstage-reviewer` when triggered); 4 with `fast` keyword; 2 when `fe-backstage-reviewer` is skipped; **1 with `seq` keyword** (`seq` overrides `fast`)
 - `fe-backstage-reviewer` scope: pass only the changed files under `plugins/*/src/` — do not feed it backend or config files
+- **Step C → Step D handoff (MANDATORY):** Accumulate findings from each Step C reviewer into an internal buffer as they complete. Invoke `doublecheck` (Step D) **exactly once**, only after ALL active Step C agents have finished. Never invoke Step D with partial findings. The payload to Step D is identical regardless of `seq` or parallel mode: `{ "3a": findings[], "3b": findings[], "3c": findings[]|"skipped", "diff": "..." }`
 
