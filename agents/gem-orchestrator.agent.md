@@ -70,8 +70,8 @@ The Orchestrator maintains a lightweight state file per feature:
   "feature": "feature-name",
   "status": "pending|running|done|failed",
   "current_phase": 1,
-  "keywords": [],                // active: "autopilot" | "fast" | "deep" | "strict" | "no-tests" | "complex"
-  "parallel_cap": 2,             // default 2; 4 if "fast" active
+  "keywords": [],                // active: "autopilot" | "fast" | "deep" | "strict" | "no-tests" | "complex" | "seq"
+  "parallel_cap": 2,             // default 2; 4 if "fast" active; 1 if "seq" active (overrides "fast")
   "domain": {
     "has_frontend": false,       // true if feature touches UI components, routes, styles, interactions
     "has_backend": true,         // true if feature touches API, router, DB, services
@@ -155,6 +155,7 @@ Append to any invocation to modify behavior. Multiple keywords can be combined.
 | `strict` | Pause after **every agent** in every phase — user approves each step | Debug orchestrator behavior, maximum control |
 | `no-tests` | Skip Phase 7 entirely | Throwaway prototype |
 | `complex` | Enable pre-mortem in P3 + multi-plan (3 DAG variants) in P4 + contract-first enforcement | Large feature with many modules and dependencies |
+| `seq` | Force **all** parallel agent groups to run sequentially (one at a time). Sets `parallel_cap = 1`. Overrides `fast`. Applies everywhere: P2 critics, P4 wave tasks, P6 reviewers, P8 reviewers. | Rate-limit issues, token budget pressure, debugging agent outputs one-by-one |
 
 > Store active keywords in `state.keywords[]` and apply throughout the session.
 
@@ -287,7 +288,7 @@ Invoke `requirement-intake`. Wait for output JSON.
 Invoke review pipeline in sequence:
 1. `knowledge-doc-auditor` — structural audit
 2. `knowledge-quality-evaluator` — requirement coverage verdicts
-3. `gem-critic` + `devils-advocate` (parallel) — adversarial review
+3. `gem-critic` + `devils-advocate` (**parallel** unless `seq` active — then sequential) *(skip both if `fast`)*
 4. `doublecheck` — filter hallucinations from critic outputs
 5. `review-coordinator` — synthesize → final verdict
 
@@ -343,6 +344,8 @@ Invoke review pipeline:
 **Step 2 — Wave execution loop:**
 
 > 💡 **`/fleet` integration:** When running under `/fleet`, this Orchestrator IS the main agent. Tasks marked as parallel in the wave below are dispatched as subagents by `/fleet`. The `state.parallel_cap` value tells the Orchestrator how many subagents to spawn simultaneously. Tasks with `conflicts_with` populated must run serially — pass this constraint explicitly when spawning subagents.
+
+> ⚡ **`seq` keyword:** If `seq` is active, `parallel_cap = 1` — all tasks within a wave run one at a time regardless of `conflicts_with`. Use when hitting rate limits, debugging individual agent outputs, or conserving token budget. `seq` overrides `fast`.
 
 > 🏗️ **Domain routing:** When `state.domain.has_frontend = true` AND `has_backend = true`, tasks in each wave are split into two streams. `[fe]`-tagged tasks go to the FE stream (BUI-aware). `[be]`-tagged tasks go to the BE stream (standard). Both streams run in parallel (subject to `parallel_cap`), then merge before the next wave. If a task has no `[fe]` or `[be]` tag → default to `[be]` stream.
 
@@ -406,9 +409,9 @@ Invoke `lifecycle-scribe` — reconcile planning doc.
 
 Invoke review pipeline:
 1. `knowledge-doc-auditor` — drift check vs design doc
-2. `gem-reviewer` + `se-security-reviewer` (parallel) — code review
+2. `gem-reviewer` + `se-security-reviewer` (**parallel** unless `seq` active — then sequential) — code review
 3. `fe-backstage-reviewer` — conditional: only if `state.domain.has_frontend = true`
-   - Runs in **parallel** with step 2
+   - Runs in **parallel** with step 2 unless `seq` active — then runs after step 2 completes
    - Scope: all `[fe]`-tagged changed files
    - Checks: BUI compliance, React 18 patterns, no MUI leaks, no `import React`, direct imports, CSS Modules, MuiV7ThemeProvider usage
    - Output feeds into `doublecheck` alongside gem-reviewer output
@@ -460,7 +463,7 @@ Invoke test pipeline:
 ### Phase 8 — Code Review
 
 Invoke review pipeline:
-1. `gem-reviewer` + `se-security-reviewer` (parallel)
+1. `gem-reviewer` + `se-security-reviewer` (**parallel** unless `seq` active — then sequential)
 2. `doublecheck` — filter hallucinations
 3. `janitor` — cleanup pass
 4. `devils-advocate` — final stress-test
@@ -543,7 +546,8 @@ After each phase transition, Orchestrator surfaces a status to user:
 - **Max 2 retries** per blocked task (after diagnose) before escalating
 - **State file is required** — never route without reading/writing state
 - **Phase 7 requires Phase 6.5 passed** — never invoke test agents before manual verify
-- **Parallel cap** — default 2 concurrent tasks; 4 with `fast` keyword
+- **Parallel cap** — default 2 concurrent tasks; 4 with `fast` keyword; **1 with `seq` keyword** (`seq` overrides `fast`)
+- **`seq` scope** — when active, affects ALL parallel groups: P2 critics, P4 wave tasks, P6 reviewers, P8 reviewers
 - **`no-tests` must not skip Phase 6.5** — manual verify still required even without Phase 7
 
 # Anti-Patterns
