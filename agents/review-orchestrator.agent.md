@@ -56,7 +56,7 @@ One state file per PR. Created on start, updated after each pipeline step, never
   "worktree_ready": false,                     // true after git worktree add succeeds
   "worktree_removed": false,                   // true after cleanup
   "status": "pending",                         // "pending" | "running" | "done" | "failed" | "cleanup"
-  "keywords": [],                              // active: "deep" | "fast" | "security" | "summary-only"
+  "keywords": [],                              // active: "deep" | "fast" | "security" | "summary-only" | "seq"
   "pipeline": {
     "researcher":        null,   // "done" | "failed" | null
     "code_reviewer":     null,
@@ -95,6 +95,7 @@ Append to any invocation to modify behavior.
 | `fast` | Skip `devils-advocate`; increase parallel cap to 4 | Quick sanity check, small PR |
 | `security` | Add a second `se-security-reviewer` pass with OWASP Top 10 checklist | Auth, permissions, data handling changes |
 | `summary-only` | Skip line-by-line findings; output high-level summary only | Large PR, first pass orientation |
+| `seq` | Force Step C reviewers to run **sequentially** (one at a time). Sets parallel cap to 1. Overrides `fast`. | Rate-limit issues, token budget pressure, debugging individual reviewer output |
 
 > Store active keywords in `state.keywords[]` and apply throughout the session.
 
@@ -163,8 +164,8 @@ git fetch + worktree add
     ↓
 [B] gem-critic (conditional — "deep" keyword only)
     ↓
-[C] gem-reviewer ∥ se-security-reviewer ∥ fe-backstage-reviewer*
-    → parallel code + security + frontend review
+[C] gem-reviewer ∥ se-security-reviewer ∥ fe-backstage-reviewer*   ← parallel (default)
+    gem-reviewer → se-security-reviewer → fe-backstage-reviewer*   ← sequential if "seq" active
     → * fe-backstage-reviewer: auto-triggered when researcher detects plugins/*/src/ files
     ↓ (wait for all active)
 [D] doublecheck             → filter false positives from all reviewers
@@ -210,7 +211,9 @@ Task: Review architectural decisions, design patterns, coupling, abstractions.
 }
 ```
 
-## Step C — Code + Security Review (parallel)
+## Step C — Code + Security Review
+
+> ⚡ **`seq` keyword:** If `seq` is active, run `gem-reviewer` → `se-security-reviewer` → `fe-backstage-reviewer` one at a time (cap = 1). Otherwise all active agents run in parallel (cap = 3 default; 4 with `fast`). `seq` overrides `fast`.
 
 Both agents receive: researcher output + worktree path + diff content
 
@@ -378,7 +381,8 @@ START
   ↓ git fetch + worktree add  →  FAIL → ESCALATE (cannot setup worktree)
   ↓ gem-researcher             →  FAIL → ESCALATE (cannot parse diff)
   ↓ [gem-critic if deep]       →  FAIL → log to escalations[], continue
-  ↓ gem-reviewer ∥ se-security ∥ [fe-backstage-reviewer if plugins/*/src/ changed]
+  ↓ gem-reviewer ∥ se-security ∥ [fe-backstage-reviewer if plugins/*/src/ changed]   ← default (parallel)
+    gem-reviewer → se-security → [fe-backstage-reviewer]                              ← if "seq" active
                                →  1 FAILS → log, continue with the others
   ↓ doublecheck                →  FAIL → skip filter, use raw findings
   ↓ review-coordinator         →  FAIL → ESCALATE
@@ -458,6 +462,6 @@ After pipeline completes, surface to user:
 - After every pipeline step: write updated state file before invoking next agent
 - Pass `scope_summary` from `gem-researcher` to ALL subsequent agents as context — prevents agents from reviewing code outside the PR scope
 - If `pr_author` is known: include in report header and avoid naming them negatively in findings — findings are about code, not people
-- Parallel cap: default 3 (`gem-reviewer` + `se-security-reviewer` + `fe-backstage-reviewer` when triggered); 4 with `fast` keyword; 2 when `fe-backstage-reviewer` is skipped
+- Parallel cap: default 3 (`gem-reviewer` + `se-security-reviewer` + `fe-backstage-reviewer` when triggered); 4 with `fast` keyword; 2 when `fe-backstage-reviewer` is skipped; **1 with `seq` keyword** (`seq` overrides `fast`)
 - `fe-backstage-reviewer` scope: pass only the changed files under `plugins/*/src/` — do not feed it backend or config files
 
