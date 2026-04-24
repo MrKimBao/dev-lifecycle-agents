@@ -1,25 +1,31 @@
-{
-  "name": "dev-lifecycle-agents",
-  "description": "Full 8-phase dev lifecycle pipeline — agents, skills, and phase references for feature development, bug fixes, and refactoring. Includes gem-orchestrator for end-to-end coordination via /fleet.",
-  "version": "1.0.0",
-  "author": {
-    "name": "Bao Huynh"
-  },
-  "homepage": "https://github.com/MrKimBao/dev-lifecycle-agents",
-  "repository": "https://github.com/MrKimBao/dev-lifecycle-agents",
-  "license": "MIT",
-  "keywords": ["dev-lifecycle", "agents", "skills", "orchestrator", "tdd", "code-review"],
-  "category": "development",
-  "agents": "agents/",
-  "skills": [
-    "skills/dev-lifecycle/",
-    "skills/verify/",
-    "skills/agent-orchestration/",
-    "skills/tdd/",
-    "skills/debug/",
-    "skills/capture-knowledge/",
-    "skills/mermaid-diagrams/",
-    "skills/simplify-implementation/"
-  ]
+﻿{
+    "name":  "dev-lifecycle-agents",
+    "description":  "Full 8-phase dev lifecycle pipeline â€” agents, skills, and phase references for feature development, bug fixes, and refactoring. Includes gem-orchestrator for end-to-end coordination via /fleet.",
+    "version":  "1.1.0",
+    "author":  {
+                   "name":  "Bao Huynh"
+               },
+    "homepage":  "https://github.com/MrKimBao/dev-lifecycle-agents",
+    "repository":  "https://github.com/MrKimBao/dev-lifecycle-agents",
+    "license":  "MIT",
+    "keywords":  [
+                     "dev-lifecycle",
+                     "agents",
+                     "skills",
+                     "orchestrator",
+                     "tdd",
+                     "code-review"
+                 ],
+    "category":  "development",
+    "agents":  "agents/",
+    "skills":  [
+                   "skills/dev-lifecycle/",
+                   "skills/verify/",
+                   "skills/agent-orchestration/",
+                   "skills/tdd/",
+                   "skills/debug/",
+                   "skills/capture-knowledge/",
+                   "skills/mermaid-diagrams/",
+                   "skills/simplify-implementation/"
+               ]
 }
-
