@@ -537,6 +537,32 @@ After each phase transition, Orchestrator surfaces a status to user:
 }
 ```
 
+## Final Feature Summary (Phase 8 → READY_TO_PUSH)
+
+When Phase 8 verdict is `READY_TO_PUSH`, surface this extended summary **before** the push gate:
+
+```
+✅ Feature {feature-name} is ready to push.
+
+## 📋 Phase Verdicts
+P1 ✅ · P2 ✅ · P3 ✅ · P4 ✅ · P5 ✅ · P6 ✅ · P6.5 ✅ · P7 ✅ · P8 ✅
+
+## ⚡ Pipeline Stats
+| Metric | Value |
+|---|---|
+| **Total duration** | {totals.wall_clock_ms} ms |
+| **Tasks completed** | {total_tasks} |
+| **Task velocity** | {task_completion_velocity} tasks/hr |
+| **Total tokens** | {totals.tokens_grand_total} |
+| **Token inflation index** | {totals.token_inflation_index}× |
+| **Backward transitions** | {backward_transitions.length} |
+| **HIR** | {hir_per_100_tasks} / 100 tasks |
+
+Proceed to push? (Reply 'yes' to push, or 'no' to abort)
+```
+
+> `⚡ Pipeline Stats` sourced from `state.metrics.totals` — written by Orchestrator after Phase 8 completes. Always include even if some values are estimated.
+
 # Constraints
 
 - **Never implement code** — that is `gem-implementer`'s job
