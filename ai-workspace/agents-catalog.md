@@ -2,7 +2,7 @@
 
 > All available AI agents in this workspace. Covers both project-specific agents and system agents used in the dev-lifecycle skill.
 >
-> **Last updated:** 2026-04-22
+> **Last updated:** 2026-04-24
 
 ---
 
@@ -36,6 +36,9 @@
 | `review-coordinator` | `claude-sonnet-4.6` | Skeptical, precise critic. Reads all evidence before concluding. Never re-runs analysis — only synthesizes and decides.<br>*(Critic hoài nghi. Đọc hết bằng chứng trước khi kết luận. Không chạy lại analysis — chỉ tổng hợp và ra verdict.)* | 📖 🧠 | 🔄 SC · 🔗 CoT · 🌳 ToT |
 | `bui-knowledge-builder` | `claude-sonnet-4.6` | Systematic cataloger. Crawls exhaustively. Never filters by current usage — full catalog every time.<br>*(Cataloger có hệ thống. Crawl toàn bộ — không lọc theo usage hiện tại.)* | 🌐 ✍️ | ⚛️ ReAct · 📉 L2M |
 | `bui-migrator` | `claude-opus-4.6` | Methodical migrator. Never leaves code broken. Unknown = `// TODO`, never a guess.<br>*(Migrator thận trọng. Không để code hỏng. Không biết = `// TODO`, không đoán mò.)* | 📖 ✍️ ⚡ 🤖 | ⚛️ ReAct · 🔗 CoT · 🌳 ToT |
+| `fe-backstage-reviewer` | `gpt-5.3-codex` | Precise, uncompromising auditor. Framework-first. Every finding must have file:line. Read-only.<br>*(Auditor chính xác. Framework-first. Mọi finding phải có file:line. Chỉ đọc, không sửa.)* | 📖 🔍 | 🔗 CoT · ⚛️ ReAct · 🌳 ToT |
+| `regraph-implementer` | `claude-opus-4.6` | ReGraph-first TDD coder. NEVER writes a line of ReGraph code without querying MCP first. No prior knowledge — live API only.<br>*(Coder TDD chuyên ReGraph. KHÔNG bao giờ viết code ReGraph mà không query MCP trước. Không dùng kiến thức cũ — chỉ live API.)* | 📖 ✍️ ⚡ 🔍 | ⚛️ ReAct · 🔗 CoT |
+| `regraph-reviewer` | `claude-sonnet-4.5` | MCP-grounded auditor. Every API verdict is backed by `search_definitions`. Read-only.<br>*(Auditor dựa vào MCP. Mọi verdict đều có `search_definitions` làm bằng chứng. Chỉ đọc, không sửa.)* | 📖 🔍 | ⚛️ ReAct · 🔗 CoT |
 | `gem-browser-tester` | `claude-haiku-4.5` | Patient tester. Observes before acting. Never touches source code.<br>*(Tester kiên nhẫn. Quan sát trước khi hành động. Không bao giờ sửa code.)* | 🌐 | ⚛️ ReAct · 📉 L2M |
 | `lifecycle-scribe` | `gemini-3.1-pro` | Precise loop driver. Detects blockers, marks tasks done, drives the Phase 4↔5 cycle. Minimal diffs only — never rewrites.<br>*(Loop driver chính xác. Phát hiện blocker, đánh dấu done, điều phối vòng lặp Phase 4↔5. Chỉ patch tối thiểu — không viết lại.)* | 📖 ✍️ 🧠 | ⚛️ ReAct · 🔗 CoT |
 | `playwright-tester` | `claude-haiku-4.5` | Explorer first, writer second. Never writes tests without seeing the live app.<br>*(Khám phá trước, viết sau. Không viết test khi chưa thấy app chạy thật.)* | 🌐 ✍️ ⚡ | ⚛️ ReAct |
@@ -48,8 +51,7 @@
 | `gem-reviewer` | `gpt-5.3-codex` | Thorough reviewer. File-by-file, no skipping. Every finding needs a line number.<br>*(Reviewer kỹ lưỡng. File-by-file, không bỏ qua. Mỗi finding phải có số dòng cụ thể.)* | 📖 | 🔗 CoT |
 | `gem-critic` | `claude-sonnet-4.6` | Constructive adversary. Asks hard questions. Never rewrites — only challenges assumptions.<br>*(Đối thủ xây dựng. Hỏi những câu khó. Không viết lại — chỉ thách thức giả định.)* | 📖 | 🌳 ToT · 🧑‍🏫 Socratic · 🔗 CoT |
 | `se-security-reviewer` | `gpt-5.4` | Paranoid by design. Every input is hostile until proven safe. OWASP-first thinking.<br>*(Hoang tưởng theo thiết kế. Mọi input đều nguy hiểm cho đến khi chứng minh ngược lại.)* | 📖 | 🔄 SC · 🔗 CoT |
-| `doublecheck` | `claude-haiku-4.5` | Anti-hallucination filter. No code evidence = finding dropped. Severity must be justified.<br>*(Bộ lọc hallucination. Không có bằng chứng trong code = loại finding. Severity phải có lý do.)* | 📖 | 🔄 SC |
-| `knowledge-doc-auditor` | `claude-sonnet-4.6` | Structural stickler. Every section must exist. TBDs must resolve. Cross-refs must work.<br>*(Người cứng nhắc về cấu trúc. Mọi section phải có. TBD phải giải quyết. Cross-ref phải hoạt động.)* | 📖 🔍 | 🔗 CoT · 📉 L2M · ⚛️ ReAct |
+| `doublecheck` | `claude-haiku-4.5` | Anti-hallucination filter + reasoning auditor. 3 modes: `claim_verify` (default), `reasoning_audit`, `combined`. Orchestrator always invokes with `combined`.<br>*(Bộ lọc hallucination + auditor reasoning. Mode `combined` từ Orchestrator: vừa lọc claims vừa chấm điểm reasoning quality của từng agent.)* | 📖 | 🔄 SC || `knowledge-doc-auditor` | `claude-sonnet-4.6` | Structural stickler. Every section must exist. TBDs must resolve. Cross-refs must work.<br>*(Người cứng nhắc về cấu trúc. Mọi section phải có. TBD phải giải quyết. Cross-ref phải hoạt động.)* | 📖 🔍 | 🔗 CoT · 📉 L2M · ⚛️ ReAct |
 | `knowledge-quality-evaluator` | `claude-sonnet-4.6` | Verdict-first auditor. Every requirement claim gets a pass/fail — no partial credit by default.<br>*(Auditor ra verdict trước. Mọi claim đều phải pass/fail — không pass mặc định.)* | 📖 | 🔄 SC · 🔗 CoT · 🌳 ToT |
 | `devils-advocate` | `claude-sonnet-4.6` | Dedicated destroyer. Actively hunts edge cases, failure modes, and NFR violations.<br>*(Kẻ phá hoại chuyên nghiệp. Chủ động săn lùng edge cases, failure modes, vi phạm NFR.)* | 📖 🔍 | 🌳 ToT · 🔗 CoT |
 | `research-technical-spike` | `claude-sonnet-4.6` | Empirical scientist. Validates before committing. Outputs VALIDATED / RISKY / INVALIDATED — evidence beats intuition.<br>*(Nhà khoa học thực nghiệm. Validate trước khi commit. Ra verdict VALIDATED/RISKY/INVALIDATED — bằng chứng luôn thắng trực giác.)* | 📖 🔍 ⚡ | 🔄 SC · ⚛️ ReAct · 🔗 CoT |
@@ -58,6 +60,7 @@
 | `polyglot-test-tester` | `gemini-3-flash` | Evidence-only reporter. No green output = no passing claim. Period.<br>*(Reporter chỉ dựa bằng chứng. Không có output xanh = không được nói pass. Hết.)* | ⚡ | *(not needed — run command & report)* |
 | `polyglot-test-fixer` | `gpt-5.3-codex-mini` | Minimal fixer. Fixes compilation errors without touching intent. Scoped changes only.<br>*(Fixer tối thiểu. Sửa lỗi compile mà không thay đổi ý định. Chỉ sửa đúng phần lỗi.)* | 📖 ✍️ ⚡ | ⚛️ ReAct |
 | `gem-orchestrator` | `claude-sonnet-4.6` | Calm conductor. Reads all outputs before routing. Never skips a phase boundary check. Full context on escalation — never just "it failed".<br>*(Nhạc trưởng bình tĩnh. Đọc hết output trước khi route. Không bao giờ bỏ qua gate. Escalate với đầy đủ context.)* | 📖 ✍️ 🧠 🤖 | ⚛️ ReAct · 🔗 CoT · 🌳 ToT |
+| `review-orchestrator` | `claude-sonnet-4.6` | Non-intrusive reviewer. Runs silently in a worktree while you keep working. Surfaces only what matters — no noise, no false positives.<br>*(Reviewer không làm phiền. Chạy âm thầm trong worktree khi anh vẫn code. Chỉ report những gì quan trọng — không nhiễu, không false positives.)* | 📖 ✍️ ⚡ 🤖 | ⚛️ ReAct · 🔗 CoT |
 | `Plan` | `claude-sonnet-4.6` | Structured orchestrator. Sequences tasks by dependency. Plans before acting — never concurrently.<br>*(Orchestrator có cấu trúc. Sắp xếp task theo dependency. Plan trước khi làm — không đồng thời.)* | 📖 ✍️ | 📉 L2M · 🔗 CoT |
 | `CVE Remediator` | `gpt-5.4` | Security-first fixer. Patches CVEs conservatively — minimum change, maximum safety.<br>*(Fixer ưu tiên security. Patch CVE thận trọng — thay đổi tối thiểu, an toàn tối đa.)* | 📖 ✍️ ⚡ | ⚛️ ReAct · 🔗 CoT |
 
@@ -128,6 +131,49 @@ These agents are defined locally in this repo.
 | P8 ready → push | All checks passed |
 
 **State file:** `ai-workspace/temp/orchestrator-state-{feature}.json`
+
+---
+
+### 🔍 `review-orchestrator`
+
+**File:** `.github/agents/review-orchestrator.agent.md`
+**Model:** `claude-sonnet-4.6`
+**Design pattern:** Worktree-Isolated Review Pipeline
+
+**Persona:** Focused, precise, non-intrusive. Runs silently in the background while the user continues their own work. Surfaces findings clearly — grouped by severity, free of noise. Never invents issues. Never skips cleanup.
+
+**Summary:** Orchestrates AI-powered PR/MR code review for team members. Creates an **isolated git worktree** for the target branch (so the user's working tree is never touched), runs the full review pipeline, produces a severity-grouped report (`MUST_FIX / NEEDS_CHANGES / APPROVED`), and guarantees worktree cleanup on exit — success, failure, or crash. Fully automatic — no user gates.
+
+**Tools:**
+```yaml
+- run_terminal   # git worktree commands, git fetch, git diff
+- read_file      # read changed files inside the worktree path
+- write_file     # write state file + final review report
+- run_agent      # invoke review pipeline agents
+- memory_search  # look up past architectural decisions or team conventions
+```
+
+**Trigger phrases:** `review pr` · `review branch` · `review mr` · `code review for`
+
+**Pipeline:**
+| Step | Agent | Notes |
+|------|-------|-------|
+| Worktree setup | *(orchestrator)* | `git fetch` + `git worktree add` |
+| [A] Scope analysis | `gem-researcher` | Changed files, subsystems, patterns |
+| [B] Architecture *(optional)* | `gem-critic` | `deep` keyword only |
+| [C1] Code review | `gem-reviewer` | Parallel |
+| [C2] Security review | `se-security-reviewer` | Parallel |
+| [C3] Frontend plugin review | `fe-backstage-reviewer` | Auto-triggered when `plugins/*/src/` files detected |
+| [C4] ReGraph API review | `regraph-reviewer` | Auto-triggered when `import.*from 'regraph'` detected |
+| [D] False positive filter | `doublecheck` | Remove unchanged-code findings |
+| [E] Synthesis | `review-coordinator` | Verdict + severity grouping |
+| Cleanup | *(orchestrator)* | `git worktree remove --force` |
+
+**Keywords:** `deep` · `fast` · `security` · `summary-only`
+
+**State file:** `ai-workspace/temp/review-state-pr-{id}.json`
+**Output report:** `ai-workspace/reviews/pr-{id}-review.md`
+**Full summary:** `ai-workspace/review-lifecycle/review-lifecycle-summary.md`
 
 ---
 
@@ -207,6 +253,44 @@ These agents are defined locally in this repo.
 
 ---
 
+### 🔍 `fe-backstage-reviewer`
+
+**File:** `.github/agents/fe-backstage-reviewer.agent.md`
+**Model:** `gpt-5.3-codex`
+**Design pattern:** Read-only Auditor
+
+**Persona:** Precise, uncompromising auditor. Framework-first: Backstage conventions override generic React advice. Never modifies code — surfaces violations with exact file:line citations.
+
+**Summary:** Reviews frontend Backstage plugin code for: BUI conventions (BUI-first, no makeStyles, Remix Icons), React 18 patterns (hooks rules, no class components, cleanup functions), TypeScript quality (strict types, no implicit `any`), testing standards (`TestApiProvider`, `MemoryRouter`), plugin structure compliance, and MuiV7ThemeProvider wrapping rules. Produces a markdown severity-grouped report.
+
+**Tools:**
+```yaml
+- read_file        # read source files, coding standards, plugin guides
+- grep_search      # find patterns: imports, JSDoc, class components, forbidden APIs
+- semantic_search  # understand component usage and patterns
+- get_errors       # check TypeScript/lint errors on reviewed files
+```
+
+**Trigger phrases:** `review frontend plugin` · `review component` · `backstage code review` · `check BUI conventions` · `fe review`
+
+**Knowledge sources used:**
+- `.github/coding-standards.md` — project coding rules
+- `.github/frontend-plugin-guide.md` — Backstage plugin patterns
+- `AGENTS.md` — MuiV7ThemeProvider rules
+- React 18 best practices from [react18-auditor.agent.md](https://github.com/github/awesome-copilot/blob/main/agents/react18-auditor.agent.md) + [expert-react-frontend-engineer.agent.md](https://github.com/github/awesome-copilot/blob/main/agents/expert-react-frontend-engineer.agent.md)
+
+**Severity levels:**
+| Level | Icon | Meaning |
+|-------|------|---------|
+| Critical | 🔴 | Runtime breaks, MuiV7ThemeProvider missing, hook violations |
+| High | 🟠 | Class components, wrong icons, missing test wrappers, `makeStyles` |
+| Medium | 🟡 | JSDoc, bad TypeScript, hook deps, missing props interface |
+| Low | 🔵 | Naming, structure, opportunistic cleanup |
+
+**Output file:** Markdown report printed directly to chat (user-invocable agent)
+
+---
+
 ### 🔄 `bui-migrator`
 
 **File:** `.github/agents/bui-migrator.agent.md`
@@ -227,6 +311,59 @@ These agents are defined locally in this repo.
 
 **Output files:**
 - `{plugin_path}/MIGRATION_REPORT.md`
+
+---
+
+### 🕸️ `regraph-implementer`
+
+**File:** `.github/agents/regraph-implementer.agent.md`
+**Model:** `claude-opus-4.6`
+**Design pattern:** MCP-First TDD Implementer
+
+**Persona:** ReGraph-first TDD coder. NEVER writes a line of ReGraph code without querying the ReGraph MCP first. No prior API knowledge — always queries live documentation.
+
+**Summary:** Implements graph visualization features for `dop-catalog-graph` using the ReGraph library. Mandatory pre-step: calls `search_definitions` + `search_documentation` via ReGraph MCP before any implementation to get live API shapes. Then applies the standard TDD Red→Green→Refactor loop. Returns output JSON with `regraph_apis_used` and `mcp_queries_made` fields — allowing the Orchestrator to verify that MCP research actually happened.
+
+**Tools:**
+```yaml
+- read_file        # read design doc, AGENTS.md, source files
+- write_file       # write implementation and test files
+- run_command      # run tests, lint, tsc
+- search_codebase  # find reusable patterns
+- regraph_mcp      # search_definitions, search_documentation, get_document_by_filename, get_example_by_name
+```
+
+**Trigger condition:** `state.domain.has_regraph = true` AND task `tech_stack` contains `"regraph"`
+
+**Lifecycle phase:** Phase 4 — ReGraph stream (parallel with FE stream)
+
+**Output files:** Co-located source + test files (e.g., `GraphChart.tsx` + `GraphChart.test.tsx`)
+
+---
+
+### 🔭 `regraph-reviewer`
+
+**File:** `.github/agents/regraph-reviewer.agent.md`
+**Model:** `claude-sonnet-4.5`
+**Design pattern:** MCP-Grounded Read-only Auditor
+
+**Persona:** MCP-grounded auditor. Every ReGraph API verdict is backed by `search_definitions` evidence — never by assumptions. Read-only.
+
+**Summary:** Reviews code changes containing `import.*from 'regraph'` for API correctness. For each ReGraph symbol used, calls `search_definitions` to verify prop types, event handler signatures, and import paths against live MCP docs. Catches: deprecated API usage, wrong prop types, unverified props used, `any` casts on ReGraph objects, unhandled promises. Does NOT review BUI, React, or TypeScript patterns — that's `fe-backstage-reviewer`'s scope.
+
+**Tools:**
+```yaml
+- read_file        # read changed files
+- grep_search      # find regraph import patterns
+```
+
+**Trigger condition:** `state.domain.has_regraph = true` OR files contain `import.*from 'regraph'`
+
+**Trigger phrases (user-invocable):** `review regraph` · `check regraph api` · `regraph code review`
+
+**Lifecycle phases:** Phase 3 (design API check) · Phase 6 (implementation check) · Phase 8 (final review)
+
+**Output file:** Markdown report printed directly to chat
 
 ---
 
@@ -417,9 +554,9 @@ These agents are provided by the AI DevKit orchestration layer and available in 
 
 **Model:** `claude-haiku-4.5`
 
-**Persona:** Anti-hallucination filter. If a finding isn't grounded in code, it doesn't ship.
+**Persona:** Anti-hallucination filter + reasoning auditor. If a finding isn't grounded in code, it doesn't ship. If reasoning wasn't applied, `quality_score` drops.
 
-**Summary:** Verifies outputs from adversarial agents (`gem-critic`, `devils-advocate`, `gem-reviewer`, `se-security-reviewer`). Removes findings not supported by evidence. Confirms severity classifications are justified.
+**Summary:** Operates in 3 modes. **Default (`claim_verify`):** verifies AI outputs — removes findings not supported by evidence, confirms severity classifications. **`reasoning_audit`:** evaluates the reasoning *process* visible in each agent's output against its declared technique (CoT/ToT/ReAct/SC/L2M/Socratic) — returns `quality_score` 0.0–1.0 per agent. **`combined`:** both in one pass — always used by `gem-orchestrator` in review phases. Reasoning quality is advisory only — never blocks a phase.
 
 **Lifecycle phases:** Phase 2, Phase 6, Phase 8
 
@@ -572,13 +709,13 @@ These agents are provided by the AI DevKit orchestration layer and available in 
 | **0** | Orchestrator | `gem-orchestrator` | *(routes all phases — see phase routing table in agent file)* |
 | **1** | Collector | `requirement-intake` | `knowledge-doc-auditor` · `bui-knowledge-builder` · `gem-researcher` · `gem-designer` · `gem-documentation-writer` |
 | **2** | Reviewer | *(Orchestrator routes)* | `knowledge-doc-auditor` · `knowledge-quality-evaluator` · `gem-critic` ∥ `devils-advocate` → `doublecheck` → `review-coordinator` |
-| **3** | Design Review | *(Orchestrator routes)* | `gem-researcher` → `gem-critic` → `research-technical-spike`* → `knowledge-quality-evaluator` → `review-coordinator` |
-| **4** | Execute Plan | *(Orchestrator routes)* | `gem-planner` → `gem-researcher` → `gem-implementer` → `gem-debugger`* → `lifecycle-scribe` |
+| **3** | Design Review | *(Orchestrator routes)* | `gem-researcher` → `gem-critic` → `research-technical-spike`* → `bui-knowledge-builder`* → `fe-backstage-reviewer`* → `regraph-reviewer`* → `knowledge-quality-evaluator` → `review-coordinator` |
+| **4** | Execute Plan | *(Orchestrator routes)* | `gem-planner` → `gem-researcher` → `gem-implementer` (BE) ∥ `gem-implementer+BUI`* (FE) ∥ `regraph-implementer`* (ReGraph) → `gem-debugger`* → `lifecycle-scribe` |
 | **5** | Update Planning | `lifecycle-scribe` | *(internal — no sub-agents)* |
-| **6** | Check Implementation | *(Orchestrator routes)* | `knowledge-doc-auditor` → `gem-reviewer` ∥ `se-security-reviewer` → `doublecheck` → `review-coordinator` |
+| **6** | Check Implementation | *(Orchestrator routes)* | `knowledge-doc-auditor` → `gem-reviewer` ∥ `se-security-reviewer` ∥ `fe-backstage-reviewer`* ∥ `regraph-reviewer`* → `doublecheck` → `review-coordinator` |
 | **6.5** | Manual Verify | *(Human gate)* | — |
 | **7** | Write Tests | *(Orchestrator routes)* | `polyglot-test-implementer` → `gem-browser-tester`* → `playwright-tester`* → `polyglot-test-tester` → `lifecycle-scribe` |
-| **8** | Code Review | *(Orchestrator routes)* | `gem-reviewer` ∥ `se-security-reviewer` → `doublecheck` → `janitor` → `devils-advocate` → `knowledge-doc-auditor` → `review-coordinator` |
+| **8** | Code Review | *(Orchestrator routes)* | `gem-reviewer` ∥ `se-security-reviewer` ∥ `regraph-reviewer`* → `doublecheck` → `janitor` → `devils-advocate` → `knowledge-doc-auditor` → `review-coordinator` |
 
 > `*` = conditional — only invoked when specific conditions are met (spike tasks exist, frontend feature, blocked, etc.)
 
@@ -604,7 +741,10 @@ These agents are provided by the AI DevKit orchestration layer and available in 
 | `gem-debugger` | 4 | Conditional — unblocks stuck tasks |
 | `gem-designer` | 1 | Design first draft (delegated by `requirement-intake`) |
 | `gem-documentation-writer` | 1 | Doc creation from scratch (delegated by `requirement-intake`) |
-| `bui-knowledge-builder` | 1 | BUI catalog refresh before design |
+| `bui-knowledge-builder` | 1, 3 | BUI catalog refresh before design (P1) · BUI knowledge seed before annotation (P3 — conditional: `has_frontend`) |
+| `fe-backstage-reviewer` | 3, 6 | BUI design annotator — appends `## BUI Design Constraints` to design doc (P3 — conditional: `has_frontend`) · BUI compliance reviewer — validates FE implementation (P6 — conditional: `has_frontend`) |
+| `regraph-implementer` | 4 | TDD implementer for ReGraph tasks (conditional: `has_regraph` or task `tech_stack` contains `"regraph"`) |
+| `regraph-reviewer` | 3, 6, 8 | ReGraph API design check (P3) · ReGraph API correctness reviewer (P6, P8 — conditional: `has_regraph`) |
 | `research-technical-spike` | 3 | Conditional — validates spike tasks |
 | `polyglot-test-implementer` | 7 | Unit + integration tests |
 | `polyglot-test-tester` | 7 | Coverage runner + gap report |
@@ -628,7 +768,7 @@ These agents are provided by the AI DevKit orchestration layer and available in 
 | `tdd` | Red→Green→Refactor — write failing test before production code | `gem-implementer`, `polyglot-test-implementer` | ✅ Knowledge Sources #1 in both agents |
 | `verify` | Evidence-based completion — require fresh command output before claiming success | `gem-orchestrator`, `lifecycle-scribe`, `polyglot-test-tester` | ✅ Knowledge Sources in all 3 agents |
 | `debug` | Structured debugging workflow — reproduce → root cause → fix plan | `gem-debugger` | ✅ Knowledge Sources #1 |
-| `capture-knowledge` | Document code entry points and save to domain knowledge docs | `knowledge-doc-auditor` | ✅ Knowledge Sources #2 (pre-existing) |
+| `capture-knowledge` | Document code entry points and save to domain knowledge docs | `gem-documentation-writer` · `knowledge-doc-auditor` · `knowledge-quality-evaluator` | `gem-documentation-writer`: ✅ KS #8 + Section 2.4 *(creator — authoritative)* · `knowledge-doc-auditor`: ✅ KS #2 *(auditor — validates schema)* · `knowledge-quality-evaluator`: ✅ KS #2 *(evaluator — quality reference)* |
 | `memory` | AI DevKit memory CLI (`npx ai-devkit@latest memory search/store`) | All agents using memory (P1–P3 mainly) | ⚠️ SKILL.md uses CLI commands — agents use MCP directly; patterns differ |
 | `mermaid-diagrams` | Mermaid syntax guide for software diagrams | `gem-designer`, `gem-documentation-writer` | ✅ Knowledge Sources #1 (designer) · #3 (doc-writer) |
 | `simplify-implementation` | Reduce complexity, improve maintainability | `janitor` | ✅ Knowledge Sources #1 |
@@ -639,6 +779,7 @@ These agents are provided by the AI DevKit orchestration layer and available in 
 | `api-patterns` | REST vs GraphQL vs tRPC selection, response formats, versioning | `gem-designer` | ✅ Knowledge Sources #3 (conditional — API tasks) |
 | `agent-md-refactor` | Refactor bloated agent instruction files | *(meta — for maintaining agent files)* | ➖ Not invoked at runtime |
 | `find-skills` | Help users discover installable skills | *(meta — for user discovery)* | ➖ Not invoked at runtime |
+| `agent-knowledge-writer` | Write or polish knowledge docs optimized for agent consumption — When-to-Use sections, imperative instructions, MUST/NEVER guardrails, JSON schemas, context budgets | *(meta — for authoring/polishing phase docs, step docs, agent KS files)* | ➖ Not invoked at runtime |
 
 
 ---
@@ -659,6 +800,9 @@ Final code review (Phase 8)               → gem-reviewer + review-coordinator
 ──────────────────────────────────────────────────────────────────────
 Migrate a plugin from MUI to BUI          → bui-migrator
 Refresh BUI component catalog             → bui-knowledge-builder
+Review frontend Backstage plugin code     → fe-backstage-reviewer
+Review ReGraph API usage in code          → regraph-reviewer
+Implement a ReGraph graph feature (P4)    → regraph-implementer
 Test UI in browser / E2E                  → gem-browser-tester
 Write/fix Playwright test files           → playwright-tester
 Update docs/ai/ lifecycle docs            → lifecycle-scribe
