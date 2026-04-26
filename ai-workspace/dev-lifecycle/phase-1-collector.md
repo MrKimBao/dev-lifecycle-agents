@@ -5,6 +5,19 @@
 
 ---
 
+## When to Use This Doc
+
+Load when:
+- Orchestrator is starting Phase 1 (new feature / Epic / Story)
+- Phase 2 returns `NEEDS_REVISION` and Phase 1 must revise with gap list
+- `requirement-intake` agent is about to be invoked
+
+> 📐 **Context budget:** ≤ 8 000 tokens.
+
+Keywords: collector, requirement intake, epic, user story, DoR, INVEST, domain knowledge check, requirement-intake
+
+---
+
 ## Overview
 
 **Persona:** Curious, methodical, thorough. Assumes nothing. Asks until the picture is complete.
@@ -63,8 +76,15 @@ flowchart LR
 9. **Write docs** — delegate: `gem-documentation-writer` → creates `requirements.md`, `design.md`, `planning.md`
 
 **Gates:**
-- ⚠️ DoR not met → `status: dor_failed`, return issues to PO, stop
+- ⚠️ DoR not met → `status: dor_failed`, return issues to PO, STOP immediately
 - ⚠️ Knowledge gap found → add spike task to planning doc, continue
+
+**Non-negotiable constraints:**
+- MUST check `docs/ai/domain-knowledge/` + memory BEFORE asking the user anything
+- MUST ask ONE topic at a time — NEVER dump a list of questions
+- MUST pass DoR gate before any design work begins
+- NEVER fill gaps with assumptions — mark every unknown as `[TBD]`
+- NEVER design an Epic directly — ALWAYS break into stories first
 
 ---
 
@@ -266,6 +286,22 @@ Git branch: {created by user — use as-is}
     "design": "docs/ai/design/feature-name.md",
     "planning": "docs/ai/planning/feature-name.md"
   },
-  "summary": "Short plain-text summary of what was captured"
+  "summary": "Short plain-text summary of what was captured",
+  "perf": {
+    "started_at": "ISO-8601",
+    "completed_at": "ISO-8601",
+    "duration_ms": 18400,
+    "tokens_input": 8200,
+    "tokens_output": 2400,
+    "tokens_total": 24600,
+    "context_fill_rate": 0.041,
+    "context_budget_exceeded": false,
+    "questions_asked": 7,
+    "dor_result": "pass | fail",
+    "spike_tasks_added": 1
+  }
 }
 ```
+
+> Orchestrator writes `perf` block to `state.metrics.phase_1` immediately on receiving the output.
+

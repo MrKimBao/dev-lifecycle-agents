@@ -5,6 +5,19 @@
 
 ---
 
+## When to Use This Doc
+
+Load when:
+- `lifecycle-scribe` is auto-triggered after a Phase 4 task completes or is blocked
+- Planning doc needs reconciliation (mark done, record deviations, detect new tasks)
+- Orchestrator checks `tasks_remaining` to route to Phase 4 or Phase 6
+
+> 📐 **Context budget:** ≤ 4 000 tokens. Minimal pass — only planning doc path + Phase 4 task output JSON.
+
+Keywords: update planning, lifecycle-scribe, reconcile progress, tasks remaining, deviations, scope changes
+
+---
+
 ## Overview
 
 **Persona:** Precise tracker. Keeps planning doc as single source of truth. Never skips an update, never inflates progress.
@@ -40,10 +53,10 @@ flowchart LR
 3. **Return** — sends `tasks_remaining` + `next_suggested_task` to Orchestrator
 
 **Behavioral rules:**
-- Minimal diff only — never rewrite the planning doc, only patch the relevant task + append notes
-- If new tasks discovered during Phase 4 → add to planning doc, do NOT silently skip
+- MUST apply minimal diff only — NEVER rewrite the planning doc, only patch the relevant task + append notes
+- MUST add new tasks discovered during Phase 4 to the planning doc — NEVER silently skip them
 - If scope changed → record explicitly, flag to user if it affects timeline
-- Never mark a task `done` if `Gem Implementer` returned `status: "blocked"`
+- NEVER mark a task `done` if `Gem Implementer` returned `status: "blocked"`
 
 **Gates:**
 - ✅ `tasks_remaining = 0` → advance to Phase 6
@@ -102,6 +115,21 @@ Return JSON: {
   "tasks_remaining": N,
   "next_suggested_task": "task-title or null",
   "blockers": ["..."],
-  "scope_changes": ["..."]
+  "scope_changes": ["..."],
+  "perf": {
+    "started_at": "ISO-8601",
+    "completed_at": "ISO-8601",
+    "duration_ms": 1800,
+    "tokens_input": 1800,
+    "tokens_output": 600,
+    "tokens_total": 2400,
+    "context_fill_rate": 0.009,
+    "context_budget_exceeded": false,
+    "tasks_marked_done": 1,
+    "deviations_recorded": 0
+  }
 }
 ```
+
+> Orchestrator **appends** each trigger's `perf` block to `state.metrics.phase_5[]` — Phase 5 fires once per completed Phase 4 task.
+

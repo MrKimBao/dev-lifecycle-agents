@@ -5,6 +5,20 @@
 
 ---
 
+## When to Use This Doc
+
+Load when:
+- Phase 6.5 manual verify is explicitly confirmed passed
+- Test suite must be written for the feature (unit + integration + optional E2E)
+- `state.domain.has_frontend = false` → skip `gem-browser-tester` (backend only)
+- Coverage gap loop is running — checking cap / escalation rules
+
+> 📐 **Context budget:** ≤ 8 000 tokens. Pass changed file list + Phase 6 findings summary.
+
+Keywords: write tests, polyglot-test-implementer, coverage, E2E, gem-browser-tester, playwright-tester, 100% coverage, design flaw discovered
+
+---
+
 ## Overview
 
 **Persona:** Thorough tester. Treats every line of new code as untrusted until covered by a test. Never approximates — 100% coverage is the target, not a stretch goal.
@@ -48,10 +62,10 @@ flowchart LR
 8. **Update doc** — `lifecycle-scribe`: update `docs/ai/testing/feature-{name}.md` with test file links and coverage results.
 
 **Behavioral rules:**
-- Never start Phase 7 unless Phase 6.5 is explicitly confirmed passed
-- If `polyglot-test-implementer` discovers design ambiguity during test writing → escalate to Phase 3
+- NEVER start Phase 7 unless Phase 6.5 is explicitly confirmed passed
+- If `polyglot-test-implementer` discovers design ambiguity during test writing → MUST escalate to Phase 3
 - Coverage gap loop capped at **2 iterations** — if still < 100% after 2 loops, escalate to user
-- E2E step is skipped for backend-only features
+- E2E step MUST be skipped for backend-only features (`has_frontend = false`)
 
 **Gates:**
 - ⚠️ Phase 6.5 not confirmed → block, ask user
@@ -163,7 +177,22 @@ Updated testing doc written to disk. Append results table with test file links +
   "overall_coverage": "XX%",
   "tests_added": ["path/to/test.ts", "..."],
   "gaps": [],
-  "blocking": false
+  "blocking": false,
+  "perf": {
+    "started_at": "ISO-8601",
+    "completed_at": "ISO-8601",
+    "duration_ms": 22000,
+    "tokens_input": 12400,
+    "tokens_output": 2800,
+    "tokens_total": 28500,
+    "context_fill_rate": 0.062,
+    "context_budget_exceeded": false,
+    "tests_added_count": 9,
+    "coverage_pct": 94,
+    "e2e_included": true
+  }
 }
 ```
+
+> Orchestrator writes `perf` block to `state.metrics.phase_7`.
 

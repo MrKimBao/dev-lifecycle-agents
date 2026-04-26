@@ -5,6 +5,19 @@
 
 ---
 
+## When to Use This Doc
+
+Load when:
+- Phase 7 is complete — all tests green, 100% coverage confirmed
+- Final pre-push review is being performed
+- `review-coordinator` is invoked for Phase 8 verdict (READY_TO_PUSH / NEEDS_FIX routing)
+
+> 📐 **Context budget:** ≤ 10 000 tokens. Pass changed file list + diffs + Phase 7 coverage report.
+
+Keywords: code review, pre-push, READY_TO_PUSH, final review, NEEDS_FIX, janitor, devils-advocate, review-coordinator Phase 8
+
+---
+
 ## Overview
 
 **Persona:** Uncompromising reviewer. Nothing ships without a traceable verdict. Every finding is classified, grounded in code, and backed by evidence — never guessed.
@@ -60,11 +73,11 @@ flowchart LR
 - [ ] Docs updated — all `docs/ai/` files complete and accurate
 
 **Behavioral rules:**
-- CRITICAL security finding = always blocking — no exceptions
-- BLOCKING code finding = must fix before push → Phase 4
-- Missing test coverage = must fix → Phase 7
-- `doublecheck` must remove findings not grounded in actual code before presenting to user
-- `janitor` reports only (does NOT auto-apply) — unless user explicitly says to apply
+- CRITICAL security finding = ALWAYS blocking — no exceptions → Phase 4
+- BLOCKING code finding = MUST fix before push → Phase 4
+- Missing test coverage = MUST fix → Phase 7
+- `doublecheck` MUST remove findings not grounded in actual code before presenting to user
+- `janitor` reports only — NEVER auto-applies unless user explicitly says to apply
 
 **Gates:**
 - ⚠️ CRITICAL security finding → BLOCKING → Phase 4
@@ -195,7 +208,21 @@ se-security-reviewer output: {json}
 Source files: {changed files}
 
 ## Output Required
-Return JSON: { "docs_status": [{ "doc": "...", "verdict": "COMPLETE|INCOMPLETE", "issues": [...] }] }
+Return JSON:
+{
+  "verified_findings": [
+    {
+      "source": "gem-reviewer | se-security-reviewer",
+      "severity": "BLOCKING | FOLLOW_UP | NICE_TO_HAVE",
+      "location": "path/to/file.ts:42",
+      "finding": "...",
+      "suggestion": "..."
+    }
+  ],
+  "removed_count": N,
+  "removed_reasons": ["..."],
+  "severity_adjustments": ["..."]
+}
 ```
 
 > `review-coordinator` — Phase 8 variant
@@ -248,7 +275,23 @@ Return JSON: {
     "docs_updated": true
   },
   "blocking_issues": [],
-  "route_to": "phase_4 | phase_7 | null"
+  "route_to": "phase_4 | phase_7 | null",
+  "perf": {
+    "context_budget_exceeded": 0,
+    "started_at": "ISO-8601",
+    "completed_at": "ISO-8601",
+    "duration_ms": 10800,
+    "tokens_input": 9200,
+    "tokens_output": 1800,
+    "tokens_total": 11000,
+    "context_fill_rate": 0.046,
+    "findings_raw": 9,
+    "findings_after_filter": 6,
+    "filter_ratio": 0.33,
+    "must_fix_count": 0
+  }
 }
 ```
+
+> Orchestrator writes `perf` block to `state.metrics.phase_8`. After this phase Orchestrator also computes and writes `state.metrics.totals`.
 

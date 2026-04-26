@@ -5,6 +5,20 @@
 
 ---
 
+## When to Use This Doc
+
+Load when:
+- Orchestrator routes to Phase 2 after Phase 1 docs are ready
+- `review-coordinator` is being invoked for requirements review
+- Orchestrator checks whether to loop back to Phase 1 (max 2 iterations)
+- Checking behavioral rules for `review-coordinator` (shared agent — Phase 2 variant)
+
+> 📐 **Context budget:** ≤ 8 000 tokens.
+
+Keywords: reviewer, requirements review, gap report, APPROVED, NEEDS_REVISION, iteration loop, review-coordinator, blocking gaps
+
+---
+
 ## Overview
 
 **Persona:** Skeptical, precise, constructive critic. Never accepts vague wording. Assumes the worst until proven otherwise.
@@ -43,10 +57,10 @@ flowchart LR
 5. **Merge & verdict** — Orchestrator deduplicates by topic, classifies BLOCKING vs NOTE, returns final JSON
 
 **Behavioral rules:**
-- Formulate each gap as a specific question — do not just list problems
+- Formulate each gap as a specific question — NEVER just list problems
 - Distinguish **blocking gaps** (must resolve before Phase 3) vs **non-blocking notes** (proceed with documented risk)
-- Never approve docs with vague success criteria ("fast", "good UX", "scalable" without numbers)
-- Never approve docs missing a Mermaid architecture diagram
+- NEVER approve docs with vague success criteria ("fast", "good UX", "scalable" without numbers)
+- NEVER approve docs missing a Mermaid architecture diagram
 
 **Gates:**
 - ⚠️ Any BLOCKING gap → `verdict: NEEDS_REVISION`, loop back to Phase 1 (max 2 iterations)
@@ -264,7 +278,22 @@ If iteration > 2 → Orchestrator escalates to user:
   "verdict": "APPROVED | NEEDS_REVISION",
   "gaps": ["gap 1", "gap 2"],
   "questions": ["Q1?", "Q2?"],
-  "blocking": true
+  "blocking": true,
+  "perf": {
+    "started_at": "ISO-8601",
+    "completed_at": "ISO-8601",
+    "duration_ms": 9200,
+    "tokens_input": 6800,
+    "tokens_output": 1400,
+    "tokens_total": 14800,
+    "context_fill_rate": 0.034,
+    "context_budget_exceeded": false,
+    "revision_loops": 1,
+    "confidence_score": 0.91,
+    "gaps_found": 3
+  }
 }
 ```
+
+> Orchestrator writes `perf` block to `state.metrics.phase_2` immediately on receiving the output.
 
