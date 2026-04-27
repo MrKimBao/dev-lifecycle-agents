@@ -186,13 +186,14 @@ These agents are defined locally in this repo.
 
 **Persona:** Precise knowledge steward. Writes 3-layer docs (business / dev compact / detail) — each layer for the right audience. In `update` mode: patches only what is stale, never rewrites the whole doc, always returns a perf JSON to the caller.
 
-**Summary:** Operates in two modes. **`new`** (user-triggered): full capture from a code entry point — Explorer → Dep Analyzer → Writer → Auditor → user gate. Produces 3 files per feature: `business/{name}.md` (PO/BA, no code), `dev/{name}.md` (AI compact ≤250 lines), `dev/{name}-detail.md` (full walkthrough). **`update`** (called by `gem-orchestrator/phase-1` when stale detected): Diff Loader → Patcher → Validator — fully automatic, returns `{ status, sections_patched, perf }` JSON. `gem-orchestrator` blocks Phase 1 until all stale docs resolve.
+**Summary:** Operates in two modes. **`new`** (user-triggered): full capture from a code entry point — Explorer → Dep Analyzer → **Live Verifier** (conditional: queries ReGraph MCP, ES live mapping, GraphDB SPARQL, FE app) → Writer → Auditor → user gate. Produces 3 files per feature: `business/{name}.md` (PO/BA, no code), `dev/{name}.md` (AI compact ≤250 lines), `dev/{name}-detail.md` (full walkthrough). Live Verifier catches source-vs-live discrepancies — Writer includes them in a **⚠️ Known Discrepancies** section. **`update`** (called by `gem-orchestrator/phase-1` when stale detected): Diff Loader → Patcher → Validator — fully automatic, returns `{ status, sections_patched, perf }` JSON. `gem-orchestrator` blocks Phase 1 until all stale docs resolve.
 
 **Tools:**
 ```yaml
 - read_file      # read knowledge index, existing docs, source files
 - write_file     # write business/, dev/, detail doc files + state file
-- run_agent      # invoke gem-researcher, gem-documentation-writer, knowledge-doc-auditor
+- run_agent      # invoke gem-researcher, gem-documentation-writer, knowledge-doc-auditor, regraph-reviewer, gem-browser-tester
+- run_terminal   # ES live index mapping, GraphDB SPARQL test queries
 ```
 
 **Trigger phrases:** `capture knowledge for` · `update knowledge for` · `capture knowledge`
@@ -200,8 +201,20 @@ These agents are defined locally in this repo.
 **Modes:**
 | Mode | Trigger | Gates | Max loops |
 |------|---------|-------|-----------|
-| `new` | User invocation | 1 user gate (end) | 2 revision loops (E→D) |
+| `new` | User invocation | 1 user gate (end) | 2 revision loops (F→E) |
 | `update` | JSON call from `gem-orchestrator` | None — fully auto | 1 retry (C→B) |
+
+**Pipeline (mode `new`):** A (Context Loader) → B (Explorer) → C (Dep Analyzer) → D* (Live Verifier) → E (Writer) → F (Auditor) → gate
+> *D skipped if no external system signal or `fast` keyword*
+
+**Live Verifier signals:**
+
+| Signal | Source | Agent |
+|--------|--------|-------|
+| `react-regraph` import | ReGraph MCP | `regraph-reviewer` |
+| ES `client.index/search` | Live index `_mapping` | `gem-researcher` |
+| SPARQL queries | GraphDB live query | `gem-researcher` |
+| FE plugin + `deep` | FE app snapshot | `gem-browser-tester` |
 
 **Output docs:**
 ```
