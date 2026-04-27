@@ -81,9 +81,10 @@ flowchart TD
 |---------|------|-------|----------|
 | `capture knowledge for X` (user) | `new` | 1 user gate (end) | A→B→C→D*→E→F→gate |
 | `update knowledge for X` (user) | `update` | None (fully auto) | A→B→C |
-| Called by `gem-orchestrator` (JSON) | `update` | None (fully auto) | A→B→C |
 
 > *D = conditional — skipped if no external system signal detected or `fast` keyword active.
+
+**knowledge-orchestrator is standalone** — it is never called by other orchestrators. `gem-orchestrator` detects stale docs via `knowledge-doc-auditor` in Phase 1, surfaces a warning to the user, and escalates. The user runs `capture knowledge for X` or `update knowledge for X` first, then resumes the feature.
 
 ---
 
@@ -176,55 +177,23 @@ revision_loops: {N} | context_budget_exceeded: false
 | **B** Patcher | `gem-documentation-writer` | Existing doc + stale sections | `sections_patched[]` | Patch ONLY stale sections |
 | **C** Validator | `knowledge-doc-auditor` | Updated doc | `APPROVED` or `NEEDS_REVISION` | Max **1** retry |
 
-**Return to caller:** `{ status, doc_path, sections_patched, summary, perf }`
+**Return:** `{ status, doc_path, sections_patched, summary, perf }`
+- `status`: `updated` | `no_changes_needed` | `failed`
 
 ---
 
-## Inter-Orchestrator Communication
+## gem-orchestrator Integration
 
-### gem-orchestrator → knowledge-orchestrator (call)
+`knowledge-orchestrator` is **standalone only** — never spawned by other orchestrators.
 
-```jsonc
-{
-  "mode": "update",
-  "caller": "gem-orchestrator/phase-1",
-  "target_doc": "docs/ai/domain-knowledge/{domain}/knowledge-{name}.md",
-  "changed_files": ["plugins/.../src/..."],
-  "feature": "feature-name"
-}
-```
+When `gem-orchestrator` Phase 1 detects stale knowledge docs via `knowledge-doc-auditor`:
 
-### knowledge-orchestrator → gem-orchestrator (response)
+1. Surface warning: `⚠️ knowledge-{name}.md may be stale — run "update knowledge for {name}" before proceeding`
+2. Escalate to user — do NOT auto-trigger knowledge-orchestrator
+3. User runs `update knowledge for X` (or `capture knowledge for X` if doc missing)
+4. User resumes feature: `continue feature X`
 
-```jsonc
-{
-  "status": "updated|failed|no_changes_needed",
-  "doc_path": "...",
-  "sections_patched": ["Dependencies table"],
-  "summary": "Updated X — Y unchanged",
-  "perf": {
-    "duration_ms": 3800,
-    "tokens_input": 0,
-    "context_fill_rate": 0,        // tokens_input / 200_000
-    "filter_ratio": 0.1,           // (findings_raw - accepted) / findings_raw — from Validator
-    "retry_count": 0,
-    "context_budget_exceeded": false
-  }
-}
-```
-
-### gem-orchestrator behavior on response
-
-| Response `status` | gem-orchestrator action |
-|---|---|
-| `updated` | Resume Phase 1 with fresh knowledge ✅ |
-| `no_changes_needed` | Resume Phase 1 immediately ✅ |
-| `failed` | Mark doc `[STALE — not updated]` in context → warn user → continue Phase 1 |
-| Timeout (>60s) | Treat as `failed` |
-
-### Multiple stale docs
-
-`gem-orchestrator` spawns **parallel** update calls — one per stale doc. Each gets its own state file. Blocks Phase 1 until **all** resolve.
+This keeps each orchestrator focused on its own concern and avoids cross-orchestrator blocking dependencies.
 
 ---
 
@@ -236,7 +205,6 @@ revision_loops: {N} | context_budget_exceeded: false
 {
   "slug": "catalog-graph",
   "mode": "new|update",
-  "caller": "user|gem-orchestrator/phase-1",
   "status": "pending|running|done|failed",
   "keywords": [],
   "target": {
