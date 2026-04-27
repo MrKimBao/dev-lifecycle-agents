@@ -41,8 +41,9 @@ flowchart TD
         A_new[A · Context Loader]:::agent
         B_new[B · Explorer\ngem-researcher]:::agent
         C_new[C · Dep Analyzer\ngem-researcher]:::agent
-        D_new[D · Writer\ngem-documentation-writer]:::agent
-        E_new[E · Auditor\nknowledge-doc-auditor]:::agent
+        D_new[D · Live Verifier\nconditional]:::agent
+        E_new[E · Writer\ngem-documentation-writer]:::agent
+        F_new[F · Auditor\nknowledge-doc-auditor]:::agent
         GATE([⏸ User Gate\nreview output]):::gate
 
         A_upd[A · Diff Loader]:::agent
@@ -57,10 +58,10 @@ flowchart TD
     User -->|capture knowledge for X| ModeNew
     GemOrch -->|stale detected — blocking call| ModeUpd
 
-    ModeNew --> A_new --> B_new --> C_new --> D_new --> E_new
-    E_new -->|APPROVED| GATE --> DONE_new
-    E_new -. ⚠️ NEEDS_REVISION max 2 loops .-> D_new
-    E_new -->|❌ > 2 loops| FAIL
+    ModeNew --> A_new --> B_new --> C_new --> D_new --> E_new --> F_new
+    F_new -->|APPROVED| GATE --> DONE_new
+    F_new -. ⚠️ NEEDS_REVISION max 2 loops .-> E_new
+    F_new -->|❌ > 2 loops| FAIL
 
     ModeUpd --> A_upd --> B_upd --> C_upd
     C_upd -->|APPROVED| DONE_upd
@@ -78,9 +79,11 @@ flowchart TD
 
 | Trigger | Mode | Gates | Pipeline |
 |---------|------|-------|----------|
-| `capture knowledge for X` (user) | `new` | 1 user gate (end) | A→B→C→D→E→gate |
+| `capture knowledge for X` (user) | `new` | 1 user gate (end) | A→B→C→D*→E→F→gate |
 | `update knowledge for X` (user) | `update` | None (fully auto) | A→B→C |
 | Called by `gem-orchestrator` (JSON) | `update` | None (fully auto) | A→B→C |
+
+> *D = conditional — skipped if no external system signal detected or `fast` keyword active.
 
 ---
 
@@ -88,15 +91,45 @@ flowchart TD
 
 | Step | Agent | Input | Output | Skip condition |
 |------|-------|-------|--------|----------------|
-| **A** Context Loader | *(orchestrator reads directly)* | Knowledge index + domain summaries | `existing_facts[]`, `gaps_found[]` | `force` keyword |
+| **A** Context Loader | *(orchestrator reads directly)* | Knowledge index + domain dev/ compact files | `existing_facts[]`, `gaps_found[]` | `force` keyword |
 | **B** Explorer | `gem-researcher` | Entry point + A output | Purpose, exports, source refs | — |
 | **C** Dep Analyzer | `gem-researcher` | B output | Dependency graph depth 3 (5 if `deep`) | `fast` keyword |
-| **D** Writer | `gem-documentation-writer` | B+C output + A facts | Summary ≤150 lines + detail file | — |
-| **E** Auditor | `knowledge-doc-auditor` | Doc paths from D | `APPROVED` or `NEEDS_REVISION` + issues | — |
+| **D** Live Verifier | *(conditional — see table below)* | B+C output + detected signals | `verified_facts[]`, `discrepancies[]` | No signal detected · `fast` keyword |
+| **E** Writer | `gem-documentation-writer` | B+C+D output + A facts | 3 docs: business/ + dev/ + detail/ | — |
+| **F** Auditor | `knowledge-doc-auditor` | Doc paths from E | `APPROVED` or `NEEDS_REVISION` + issues | — |
 
-**Revision loop:** E → D max **2 loops** before escalating.
+**Revision loop:** F → E max **2 loops** before escalating.
 
 **`deep` extra step:** `gem-critic` architecture pass inserted between C and D.
+
+### Step D — Live Verifier: Source Detection & Agent Routing
+
+Step D runs only when the entry point touches external systems. Orchestrator auto-detects signals from B+C output:
+
+| Signal detected | Live source queried | Agent | Tool |
+|----------------|--------------------|----|------|
+| Imports `@cambridge-intelligence/regraph` or `react-regraph` | ReGraph MCP — `search_definitions`, `search_documentation` | `regraph-reviewer` | MCP |
+| Writes/reads Elasticsearch (`client.index`, `client.search`, collator pattern) | ES live index mapping `GET /{index}/_mapping` | `gem-researcher` | `run_terminal` |
+| Runs SPARQL queries (GraphDB client, `sparqlQuery`, `SELECT ?`) | GraphDB live SPARQL test query against endpoint | `gem-researcher` | `run_terminal` |
+| FE plugin + `deep` keyword | FE app running locally — screenshot + snapshot | `gem-browser-tester` | browser MCP |
+
+**D output:**
+```jsonc
+{
+  "verified_facts": [
+    "ReGraph Chart v3.4 — prop `nodes` type confirmed as NodeData[]",
+    "ES index dop-ai-inventory-* mapping has field ai_labels (keyword)"
+  ],
+  "discrepancies": [
+    "Source uses Chart prop `selection` but MCP shows it was renamed to `selectedIds` in v3.3"
+  ],
+  "sources_checked": ["regraph-mcp", "elasticsearch"],
+  "skipped_sources": [],
+  "perf": { "duration_ms": 0, "tokens_input": 0, "context_fill_rate": 0 }
+}
+```
+
+> **Writer (Step E) MUST** include `discrepancies[]` in the `dev/` compact file under a **⚠️ Known Discrepancies** section if non-empty. This makes stale patterns visible to future agents.
 
 **Mode `new` — final output (before user gate):**
 
@@ -110,7 +143,12 @@ Orchestrator surfaces the following before the user gate. Always include even if
 - dev/{name}.md               ({N} lines — must be ≤ 250)
 - dev/{name}-detail.md        ({N} lines)
 
-### Step E Audit
+### Step D Live Verification
+- Sources checked: {regraph-mcp | elasticsearch | graphdb | fe-app | none}
+- verified_facts: {N}
+- discrepancies: {N} (see ⚠️ section in dev/{name}.md)
+
+### Step F Audit
 - Verdict: APPROVED | APPROVED (post-patch)
 - Findings: {N} issues found, {N} patched
 - filter_ratio: {0.xx}
@@ -120,8 +158,9 @@ Orchestrator surfaces the following before the user gate. Always include even if
 |------|------------|--------------|-------------------|
 | B Explorer      | ... | ... | ... |
 | C Dep Analyzer  | ... | ... | ... |
-| D Writer        | ... | ... | ... |
-| E Auditor       | ... | ... | ... |
+| D Live Verifier | ... | ... | ... |
+| E Writer        | ... | ... | ... |
+| F Auditor       | ... | ... | ... |
 | **Total**       | ... | ... | **max: ...** |
 
 revision_loops: {N} | context_budget_exceeded: false
@@ -208,11 +247,12 @@ revision_loops: {N} | context_budget_exceeded: false
     "detail_doc":   "docs/ai/domain-knowledge/catalog-graph/dev/catalog-graph-detail.md"
   },
   "pipeline": {
-    "context_loader": null,   // { status, existing_facts_count, gaps_found_count }
-    "explorer":       null,   // { status, perf: { duration_ms, tokens_input, context_fill_rate } }
-    "dep_analyzer":   null,   // { status, perf: { ... } }
-    "writer":         null,   // { status, perf: { ... } }
-    "auditor":        null    // { status, findings_raw, findings_accepted, filter_ratio, perf: { ... } }
+    "context_loader":  null,   // { status, existing_facts_count, gaps_found_count }
+    "explorer":        null,   // { status, perf: { duration_ms, tokens_input, context_fill_rate } }
+    "dep_analyzer":    null,   // { status, perf: { ... } }
+    "live_verifier":   null,   // { status, skipped, sources_checked[], verified_facts_count, discrepancies_count, perf: { ... } }
+    "writer":          null,   // { status, perf: { ... } }
+    "auditor":         null    // { status, findings_raw, findings_accepted, filter_ratio, perf: { ... } }
   },
   "revision_loops": 0,
   "stale_sections": [],
@@ -228,7 +268,9 @@ revision_loops: {N} | context_budget_exceeded: false
     "context_budget_exceeded": false,
     // mode: new only
     "revision_loops": 0,
-    "filter_ratio": null,            // from Auditor (Step E)
+    "filter_ratio": null,            // from Auditor (Step F)
+    "discrepancies_found": 0,        // from Live Verifier (Step D)
+    "sources_checked": [],           // from Live Verifier (Step D)
     // mode: update only
     "retry_count": 0,
     "filter_ratio_update": null      // from Validator (Step C)
@@ -242,8 +284,8 @@ revision_loops: {N} | context_budget_exceeded: false
 
 | Keyword | Effect | Mode |
 |---------|--------|------|
-| `deep` | Dep graph depth 5 + `gem-critic` pass before writer | `new` |
-| `fast` | Skip Dep Analyzer (Step C) | `new` |
+| `deep` | Dep graph depth 5 + `gem-critic` pass before writer + FE app verification in Step D | `new` |
+| `fast` | Skip Dep Analyzer (Step C) + Skip Live Verifier (Step D) | `new` |
 | `force` | Skip Context Loader (Step A) — full re-capture | `new` |
 
 ---
@@ -255,8 +297,9 @@ revision_loops: {N} | context_budget_exceeded: false
 | A (Context Loader) | Knowledge index path + domain | Source files |
 | B (Explorer) | Entry point path + A.existing_facts | Full knowledge docs |
 | C (Dep Analyzer) | B output + entry point path | A facts, full source |
-| D (Writer) | B+C output + A gaps + capture skill rules | Full source files |
-| E/C (Auditor/Validator) | Doc paths only | Pipeline history |
+| D (Live Verifier) | B+C output (signals only) + external system endpoints | Full source, A facts |
+| E (Writer) | B+C+D output + A gaps + capture skill rules | Full source files |
+| F/C (Auditor/Validator) | Doc paths only | Pipeline history |
 
 ---
 
@@ -293,9 +336,11 @@ Each step returns a `perf` block. Orchestrator writes it to `state.pipeline.<ste
 | `tokens_input` | All steps | Estimated token input |
 | `context_fill_rate` | `tokens_input / 200_000` | > 0.5 = warning; > 0.8 = truncation risk |
 | `context_budget_exceeded` | All steps | `true` when input budget exceeded |
-| `revision_loops` | Mode `new` — Step E | E→D loops before APPROVED |
-| `filter_ratio` | Step E (Auditor) + Step C (Validator) | `(findings_raw - accepted) / findings_raw` — hallucination rate |
+| `revision_loops` | Mode `new` — Step F | F→E loops before APPROVED |
+| `filter_ratio` | Step F (Auditor) + Step C (Validator) | `(findings_raw - accepted) / findings_raw` — hallucination rate |
 | `retry_count` | Mode `update` — Step C | Validator retry count |
+| `discrepancies_found` | Step D (Live Verifier) | Count of source-vs-live mismatches |
+| `sources_checked` | Step D (Live Verifier) | Which external systems were queried |
 
 ### Input Budgets (soft limits)
 
@@ -303,8 +348,9 @@ Each step returns a `perf` block. Orchestrator writes it to `state.pipeline.<ste
 |------|--------|---------------------|
 | B (Explorer) | ≤ 8 000 tokens | Split entry point scope — ask user |
 | C (Dep Analyzer) | ≤ 6 000 tokens | Reduce depth to 2, alert |
-| D (Writer) | ≤ 10 000 tokens | Pass summaries not full source output |
-| E/C (Auditor/Validator) | ≤ 4 000 tokens | Pass doc paths only — already enforced by Context Contracts |
+| D (Live Verifier) | ≤ 4 000 tokens | Query fewer sources — prioritize ReGraph MCP > ES > GraphDB > FE |
+| E (Writer) | ≤ 10 000 tokens | Pass summaries not full source output |
+| F/C (Auditor/Validator) | ≤ 4 000 tokens | Pass doc paths only — already enforced by Context Contracts |
 
 > **`filter_ratio` target:** < 0.30 — if Auditor consistently > 0.35, Writer output quality is low.
 
@@ -315,6 +361,8 @@ Each step returns a `perf` block. Orchestrator writes it to `state.pipeline.<ste
 | Failure point | Mode | Action |
 |---|---|---|
 | Explorer blocked | `new` | Escalate to user |
+| Live Verifier — external system unreachable | `new` | Skip that source, log in `skipped_sources[]`, continue |
+| Live Verifier — all sources fail | `new` | Log warning, continue without verified_facts (doc still created) |
 | Writer > 2 revision loops | `new` | Escalate to user |
 | Validator fail after 1 retry | `update` | Return `status: "failed"` to caller |
 | Diff Loader — doc not found | `update` | Return `status: "failed", reason: "doc not found"` |
