@@ -221,11 +221,21 @@ flowchart TD
 ```
 docs/ai/domain-knowledge/
 ├── README.md                              # Index — always updated after new capture
+├── common/                                # Shared technical references (no audience split)
+│   └── knowledge-{name}.md
 └── {domain}/
-    ├── knowledge-{name}.md                # Summary ≤ 150 lines
-    ├── knowledge-{name}-detail.md         # Full implementation details
-    └── knowledge-{name}-{topic}.md        # Optional standalone reference
+    ├── business/
+    │   └── {name}.md                      # PO/BA layer — plain language, no code, no limit
+    └── dev/
+        ├── {name}.md                      # AI compact ≤ 250 lines (business summary + technical overview)
+        └── {name}-detail.md               # Full walkthrough — code refs, patterns, no limit
 ```
+
+**Audience rules:**
+- `business/` — PO / BA / non-tech: flow, terminology, business rules. No source file refs.
+- `dev/{name}.md` — AI agents load this first: business context (~30 lines) + technical overview (~100 lines) + key patterns (~50 lines) + cross-refs.
+- `dev/{name}-detail.md` — load on demand for implementation specifics.
+- `common/` — technical references shared across 2+ domains. No `business/dev/` split.
 
 ---
 
