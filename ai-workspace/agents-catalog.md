@@ -61,6 +61,7 @@
 | `polyglot-test-fixer` | `gpt-5.3-codex-mini` | Minimal fixer. Fixes compilation errors without touching intent. Scoped changes only.<br>*(Fixer tối thiểu. Sửa lỗi compile mà không thay đổi ý định. Chỉ sửa đúng phần lỗi.)* | 📖 ✍️ ⚡ | ⚛️ ReAct |
 | `gem-orchestrator` | `claude-sonnet-4.6` | Calm conductor. Reads all outputs before routing. Never skips a phase boundary check. Full context on escalation — never just "it failed".<br>*(Nhạc trưởng bình tĩnh. Đọc hết output trước khi route. Không bao giờ bỏ qua gate. Escalate với đầy đủ context.)* | 📖 ✍️ 🧠 🤖 | ⚛️ ReAct · 🔗 CoT · 🌳 ToT |
 | `review-orchestrator` | `claude-sonnet-4.6` | Non-intrusive reviewer. Runs silently in a worktree while you keep working. Surfaces only what matters — no noise, no false positives.<br>*(Reviewer không làm phiền. Chạy âm thầm trong worktree khi anh vẫn code. Chỉ report những gì quan trọng — không nhiễu, không false positives.)* | 📖 ✍️ ⚡ 🤖 | ⚛️ ReAct · 🔗 CoT |
+| `knowledge-orchestrator` | `claude-sonnet-4.6` | Two-mode knowledge steward. Mode `new`: full capture from source → 3-layer docs. Mode `update`: blocking stale patch called by gem-orchestrator — fast, precise, returns perf JSON.<br>*(Quản lý knowledge 2 chế độ. `new`: capture đầy đủ → 3 lớp docs. `update`: patch stale theo lệnh gem-orchestrator — nhanh, chính xác, trả perf JSON.)* | 📖 ✍️ 🤖 | ⚛️ ReAct · 🔗 CoT |
 | `Plan` | `claude-sonnet-4.6` | Structured orchestrator. Sequences tasks by dependency. Plans before acting — never concurrently.<br>*(Orchestrator có cấu trúc. Sắp xếp task theo dependency. Plan trước khi làm — không đồng thời.)* | 📖 ✍️ | 📉 L2M · 🔗 CoT |
 | `CVE Remediator` | `gpt-5.4` | Security-first fixer. Patches CVEs conservatively — minimum change, maximum safety.<br>*(Fixer ưu tiên security. Patch CVE thận trọng — thay đổi tối thiểu, an toàn tối đa.)* | 📖 ✍️ ⚡ | ⚛️ ReAct · 🔗 CoT |
 
@@ -173,7 +174,46 @@ These agents are defined locally in this repo.
 
 **State file:** `ai-workspace/temp/review-state-pr-{id}.json`
 **Output report:** `ai-workspace/reviews/pr-{id}-review.md`
-**Full summary:** `ai-workspace/review-lifecycle/review-lifecycle-summary.md`
+**Full guide:** `ai-workspace/review-lifecycle/review-lifecycle-guide.md`
+
+---
+
+### 🗃️ `knowledge-orchestrator`
+
+**File:** `.github/agents/knowledge-orchestrator.agent.md`
+**Model:** `claude-sonnet-4.6`
+**Design pattern:** Dual-Mode Knowledge Pipeline
+
+**Persona:** Precise knowledge steward. Writes 3-layer docs (business / dev compact / detail) — each layer for the right audience. In `update` mode: patches only what is stale, never rewrites the whole doc, always returns a perf JSON to the caller.
+
+**Summary:** Operates in two modes. **`new`** (user-triggered): full capture from a code entry point — Explorer → Dep Analyzer → Writer → Auditor → user gate. Produces 3 files per feature: `business/{name}.md` (PO/BA, no code), `dev/{name}.md` (AI compact ≤250 lines), `dev/{name}-detail.md` (full walkthrough). **`update`** (called by `gem-orchestrator/phase-1` when stale detected): Diff Loader → Patcher → Validator — fully automatic, returns `{ status, sections_patched, perf }` JSON. `gem-orchestrator` blocks Phase 1 until all stale docs resolve.
+
+**Tools:**
+```yaml
+- read_file      # read knowledge index, existing docs, source files
+- write_file     # write business/, dev/, detail doc files + state file
+- run_agent      # invoke gem-researcher, gem-documentation-writer, knowledge-doc-auditor
+```
+
+**Trigger phrases:** `capture knowledge for` · `update knowledge for` · `capture knowledge`
+
+**Modes:**
+| Mode | Trigger | Gates | Max loops |
+|------|---------|-------|-----------|
+| `new` | User invocation | 1 user gate (end) | 2 revision loops (E→D) |
+| `update` | JSON call from `gem-orchestrator` | None — fully auto | 1 retry (C→B) |
+
+**Output docs:**
+```
+docs/ai/domain-knowledge/{domain}/
+├── business/{name}.md       # PO/BA — plain language, no code, no limit
+└── dev/
+    ├── {name}.md            # AI compact ≤ 250 lines
+    └── {name}-detail.md     # Full walkthrough, no limit
+```
+
+**State file:** `ai-workspace/temp/knowledge-state-{slug}.json`
+**Full guide:** `ai-workspace/knowledge-lifecycle/knowledge-lifecycle-guide.md`
 
 ---
 

@@ -108,7 +108,7 @@ flowchart TD
 | **B** Patcher | `gem-documentation-writer` | Existing doc + stale sections | `sections_patched[]` | Patch ONLY stale sections |
 | **C** Validator | `knowledge-doc-auditor` | Updated doc | `APPROVED` or `NEEDS_REVISION` | Max **1** retry |
 
-**Return to caller:** `{ status, doc_path, sections_patched, summary, duration_ms }`
+**Return to caller:** `{ status, doc_path, sections_patched, summary, perf }`
 
 ---
 
@@ -134,7 +134,14 @@ flowchart TD
   "doc_path": "...",
   "sections_patched": ["Dependencies table"],
   "summary": "Updated X — Y unchanged",
-  "duration_ms": 3800
+  "perf": {
+    "duration_ms": 3800,
+    "tokens_input": 0,
+    "context_fill_rate": 0,        // tokens_input / 200_000
+    "filter_ratio": 0.1,           // (findings_raw - accepted) / findings_raw — from Validator
+    "retry_count": 0,
+    "context_budget_exceeded": false
+  }
 }
 ```
 
@@ -167,15 +174,16 @@ flowchart TD
   "target": {
     "entry_point": "...",
     "domain": "catalog-graph",
-    "doc_path": "docs/ai/domain-knowledge/catalog-graph/knowledge-catalog-graph.md",
-    "detail_path": "..."
+    "business_doc": "docs/ai/domain-knowledge/catalog-graph/business/catalog-graph.md",
+    "dev_doc":      "docs/ai/domain-knowledge/catalog-graph/dev/catalog-graph.md",
+    "detail_doc":   "docs/ai/domain-knowledge/catalog-graph/dev/catalog-graph-detail.md"
   },
   "pipeline": {
-    "context_loader": null,
-    "explorer":       null,
-    "dep_analyzer":   null,
-    "writer":         null,
-    "auditor":        null
+    "context_loader": null,   // { status, existing_facts_count, gaps_found_count }
+    "explorer":       null,   // { status, perf: { duration_ms, tokens_input, context_fill_rate } }
+    "dep_analyzer":   null,   // { status, perf: { ... } }
+    "writer":         null,   // { status, perf: { ... } }
+    "auditor":        null    // { status, findings_raw, findings_accepted, filter_ratio, perf: { ... } }
   },
   "revision_loops": 0,
   "stale_sections": [],
@@ -183,11 +191,18 @@ flowchart TD
   "escalations": [],
   "created_at": "ISO-8601",
   "completed_at": null,
+  // ── Performance Metrics ───────────────────────────────────────────────────
   "metrics": {
     "duration_ms": null,
     "tokens_total": null,
-    "tokens_input": null,
-    "context_fill_rate": null
+    "context_fill_rate_max": null,   // max(tokens_input / 200_000) across all steps
+    "context_budget_exceeded": false,
+    // mode: new only
+    "revision_loops": 0,
+    "filter_ratio": null,            // from Auditor (Step E)
+    // mode: update only
+    "retry_count": 0,
+    "filter_ratio_update": null      // from Validator (Step C)
   }
 }
 ```
@@ -236,6 +251,33 @@ docs/ai/domain-knowledge/
 - `dev/{name}.md` — AI agents load this first: business context (~30 lines) + technical overview (~100 lines) + key patterns (~50 lines) + cross-refs.
 - `dev/{name}-detail.md` — load on demand for implementation specifics.
 - `common/` — technical references shared across 2+ domains. No `business/dev/` split.
+
+---
+
+## ⚡ Performance Metrics
+
+Each step returns a `perf` block. Orchestrator writes it to `state.pipeline.<step>` immediately on receipt.
+
+| Metric | Source | Purpose |
+|--------|--------|---------|
+| `duration_ms` | All steps | Wall clock per step |
+| `tokens_input` | All steps | Estimated token input |
+| `context_fill_rate` | `tokens_input / 200_000` | > 0.5 = warning; > 0.8 = truncation risk |
+| `context_budget_exceeded` | All steps | `true` when input budget exceeded |
+| `revision_loops` | Mode `new` — Step E | E→D loops before APPROVED |
+| `filter_ratio` | Step E (Auditor) + Step C (Validator) | `(findings_raw - accepted) / findings_raw` — hallucination rate |
+| `retry_count` | Mode `update` — Step C | Validator retry count |
+
+### Input Budgets (soft limits)
+
+| Step | Budget | Action when exceeded |
+|------|--------|---------------------|
+| B (Explorer) | ≤ 8 000 tokens | Split entry point scope — ask user |
+| C (Dep Analyzer) | ≤ 6 000 tokens | Reduce depth to 2, alert |
+| D (Writer) | ≤ 10 000 tokens | Pass summaries not full source output |
+| E/C (Auditor/Validator) | ≤ 4 000 tokens | Pass doc paths only — already enforced by Context Contracts |
+
+> **`filter_ratio` target:** < 0.30 — if Auditor consistently > 0.35, Writer output quality is low.
 
 ---
 
