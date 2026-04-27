@@ -98,6 +98,35 @@ flowchart TD
 
 **`deep` extra step:** `gem-critic` architecture pass inserted between C and D.
 
+**Mode `new` — final output (before user gate):**
+
+Orchestrator surfaces the following before the user gate. Always include even if metrics are estimated:
+
+```
+## 📦 Capture Summary — {domain}/{name}
+
+### Docs Created
+- business/{name}.md          ({N} lines)
+- dev/{name}.md               ({N} lines — must be ≤ 250)
+- dev/{name}-detail.md        ({N} lines)
+
+### Step E Audit
+- Verdict: APPROVED | APPROVED (post-patch)
+- Findings: {N} issues found, {N} patched
+- filter_ratio: {0.xx}
+
+### ⚡ Pipeline Stats
+| Step | duration_ms | tokens_input | context_fill_rate |
+|------|------------|--------------|-------------------|
+| B Explorer      | ... | ... | ... |
+| C Dep Analyzer  | ... | ... | ... |
+| D Writer        | ... | ... | ... |
+| E Auditor       | ... | ... | ... |
+| **Total**       | ... | ... | **max: ...** |
+
+revision_loops: {N} | context_budget_exceeded: false
+```
+
 ---
 
 ## Mode: update — Pipeline Steps
