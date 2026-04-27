@@ -59,7 +59,9 @@ flowchart LR
 ## Steps
 
 1. **Parse ticket** — extract: ID, type (Epic/Story), summary, description, existing AC, labels (all provided by user)
-2. **Domain knowledge check** — delegate `knowledge-doc-auditor` to scan `docs/ai/domain-knowledge/` + memory; flag missing or stale coverage as gaps → add spike task to planning if found
+2. **Domain knowledge check** — delegate `knowledge-doc-auditor` to scan `docs/ai/domain-knowledge/` + memory; flag missing or stale coverage:
+   - **Missing docs** → add knowledge spike task to planning
+   - **Stale docs** → return `knowledge_stale` status to orchestrator → orchestrator escalates to user (run `update knowledge for X` first)
 3. **Validate ticket quality**
    - Epic: outcome-based (not solution-prescriptive)? Clear success metrics?
    - Story: **INVEST** check (Independent, Negotiable, Valuable, Estimable, Small, Testable)
@@ -145,7 +147,9 @@ INIT
 PARSE_TICKET          → id, type, summary, description, AC, links
  │
  ▼
-DOMAIN_CHECK          → delegate: knowledge-doc-auditor → scan docs/ai/domain-knowledge/ + memory → flag gaps
+DOMAIN_CHECK          → delegate: knowledge-doc-auditor → scan docs/ai/domain-knowledge/ + memory
+ ├─ missing docs  → add spike task to planning, continue
+ └─ stale docs    → return knowledge_stale → orchestrator escalates to user (STOP)
  │
  ▼
 CLASSIFY
@@ -263,7 +267,7 @@ Git branch: {created by user — use as-is}
 
 | Role | Agent | Status | Scope | Note |
 |------|-------|--------|-------|------|
-| **Domain knowledge check** | `knowledge-doc-auditor` | ✅ Installed | Audit `docs/ai/domain-knowledge/` for coverage gaps before design | Flags missing/stale → spike task added |
+| **Domain knowledge check** | `knowledge-doc-auditor` | ✅ Installed | Audit `docs/ai/domain-knowledge/` for coverage gaps before design | Missing → spike task added. Stale → return `knowledge_stale` → orchestrator escalates to user |
 | **BUI component catalog** | `bui-knowledge-builder` | ✅ Installed | Crawl ui.backstage.io → build fresh BUI component catalog | Run before `gem-designer` — ensures design uses latest BUI components |
 | **Codebase context** | `gem-researcher` | ✅ Installed | Find existing patterns before design draft | Called after `bui-knowledge-builder`, before `gem-designer` |
 | **Design first draft** | `gem-designer` | ✅ Installed | Mermaid + data model + API sketch — **DRAFT ONLY** | Consumes BUI catalog + codebase context. Phase 3 does full review |

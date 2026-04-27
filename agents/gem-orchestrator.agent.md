@@ -300,8 +300,14 @@ Invoke `requirement-intake`. Wait for output JSON.
 | `done` | **[USER GATE]** — show doc summary, ask for approval to proceed to Phase 2 |
 | `dor_failed` | Show DoR issues list → ask user to fix ticket → re-invoke Phase 1 |
 | `needs_user_input` | Relay question to user → feed answer back to Phase 1 |
+| `knowledge_stale` | **Surface warning + ESCALATE** — do NOT auto-trigger knowledge-orchestrator (see below) |
 
 > ⚠️ **User gate after Phase 1**: Show the 3 doc paths + summary. Ask: *"Docs created. Proceed to Phase 2 (requirements review)?"*
+
+**When `knowledge_stale` returned by `knowledge-doc-auditor` during Phase 1:**
+1. Show: `"⚠️ Knowledge docs for {domain} may be stale: {stale_docs[]}"`
+2. Show: `"Run 'update knowledge for {name}' (fast patch) or 'capture knowledge for {name}' (full re-capture) — then re-invoke 'start feature X'"`
+3. **STOP** — do not continue Phase 1 with stale knowledge
 
 ---
 
