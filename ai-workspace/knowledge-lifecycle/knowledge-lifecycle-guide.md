@@ -28,12 +28,10 @@ flowchart TD
     classDef gate     fill:#f59e0b,stroke:#b45309,color:#000
     classDef done     fill:#22c55e,stroke:#15803d,color:#fff
     classDef fail     fill:#ef4444,stroke:#991b1b,color:#fff
-    classDef caller   fill:#b45309,stroke:#92400e,color:#fff
 
     User([👤 User]):::user
-    GemOrch([⚙️ gem-orchestrator\nPhase 1]):::caller
 
-    subgraph KO [knowledge-orchestrator]
+    subgraph KO [knowledge-orchestrator — standalone]
         direction TB
         ModeNew[Mode: new]:::capture
         ModeUpd[Mode: update]:::update
@@ -52,11 +50,11 @@ flowchart TD
     end
 
     DONE_new([✅ Docs committed]):::done
-    DONE_upd([✅ Return updated JSON]):::done
+    DONE_upd([✅ Done]):::done
     FAIL([🚨 Escalate / Return failed]):::fail
 
     User -->|capture knowledge for X| ModeNew
-    GemOrch -->|stale detected — blocking call| ModeUpd
+    User -->|update knowledge for X| ModeUpd
 
     ModeNew --> A_new --> B_new --> C_new --> D_new --> E_new --> F_new
     F_new -->|APPROVED| GATE --> DONE_new
@@ -67,8 +65,6 @@ flowchart TD
     C_upd -->|APPROVED| DONE_upd
     C_upd -. ⚠️ retry max 1 .-> B_upd
     C_upd -->|❌ failed| FAIL
-
-    DONE_upd -->|JSON response| GemOrch
 ```
 
 > *(Mũi tên nét đứt `⚠️` = retry. `❌` = hard failure → escalate or return `status: "failed"`)*

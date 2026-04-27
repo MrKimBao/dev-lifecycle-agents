@@ -34,15 +34,25 @@ Keywords: collector, requirement intake, epic, user story, DoR, INVEST, domain k
 
 ```mermaid
 flowchart LR
+    classDef agent   fill:#475569,stroke:#334155,color:#fff
+    classDef gate    fill:#f59e0b,stroke:#b45309,color:#000
+    classDef stop    fill:#ef4444,stroke:#991b1b,color:#fff
+    classDef done    fill:#22c55e,stroke:#15803d,color:#fff
+    classDef warn    fill:#f97316,stroke:#c2410c,color:#fff
+
     IN([User ticket]) --> A1
-    A1[knowledge-doc-auditor\ndomain check] --> A2
-    A2{DoR gate} -->|fail| STOP([Return to PO])
+    A1[knowledge-doc-auditor\ndomain check]:::agent --> STALE{stale?}
+    STALE -->|missing docs| SPIKE[add spike task\ncontinue]:::warn
+    STALE -->|stale docs| ESC([⚠️ Escalate to user\nSTOP]):::stop
+    STALE -->|ok| A2
+    SPIKE --> A2
+    A2{DoR gate}:::gate -->|fail| STOP([Return to PO]):::stop
     A2 -->|pass| A3
-    A3[requirement-intake\ngather + enrich] --> A4
-    A4[bui-knowledge-builder] --> A5
-    A5[gem-researcher] --> A6
-    A6[gem-designer\ndraft only] --> A7
-    A7[gem-documentation-writer] --> OUT([3 docs to Orchestrator])
+    A3[requirement-intake\ngather + enrich]:::agent --> A4
+    A4[bui-knowledge-builder]:::agent --> A5
+    A5[gem-researcher]:::agent --> A6
+    A6[gem-designer\ndraft only]:::agent --> A7
+    A7[gem-documentation-writer]:::agent --> OUT([3 docs to Orchestrator]):::done
 ```
 
 ---

@@ -63,8 +63,10 @@ flowchart TD
 
     DONE([✅ READY TO PUSH]):::done
     ESC([🚨 Escalate to user]):::esc
+    KSTALE([⚠️ Knowledge stale\nrun update knowledge for X]):::esc
 
     P1 -->|done| GATE1
+    P1 -->|knowledge_stale| KSTALE
     GATE1 -->|confirmed| P2
     GATE1 -.->|autopilot| P2
 
@@ -335,8 +337,9 @@ This means: **you do NOT need to re-describe the agent's persona** in each phase
 | | |
 |---|---|
 | **Entry point** | `requirement-intake` agent (Hybrid Coordinator) |
-| **Key gates** | INVEST check → DoR gate → domain knowledge check |
-| **Delegates to** | `gem-researcher` → `gem-designer` → `gem-documentation-writer` |
+| **Key gates** | Domain knowledge check → INVEST check → DoR gate |
+| **Stale knowledge** | `knowledge-doc-auditor` detects stale → return `knowledge_stale` → orchestrator warns user + STOPS → user runs `update knowledge for X` → resumes |
+| **Delegates to** | `knowledge-doc-auditor` → `bui-knowledge-builder` → `gem-researcher` → `gem-designer` → `gem-documentation-writer` |
 | **Output** | 3 docs: `requirements`, `design`, `planning` + JSON contract to Orchestrator |
 
 **Next:** Phase 2 → Phase 3
