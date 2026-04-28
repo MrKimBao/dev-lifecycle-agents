@@ -92,7 +92,8 @@ If the domain is unclear, ask the user. If a new domain is needed, create the fo
 After creating files, **update `docs/ai/domain-knowledge/README.md`** with an entry linking to all 3 new files (business, dev, detail).
 
 ### Business File (`{domain}/business/{name}.md`) — no line limit
-- **Output language: English** — regardless of source code language or domain terminology
+- **Output language: English** — all prose must be written in English regardless of source code language
+- **Domain/technical terms:** preserve original German (or other language) terms when they are established domain vocabulary, and add an English annotation in parentheses on first use — e.g. `Fachkompetenz (domain competency)`, `Leistungserbringer (service provider)`. Do not translate terms that have no direct English equivalent or that users know only by their German name.
 - Written in plain language for PO / BA / non-tech readers
 - Feature description: what it does, why it exists
 - Business flow: what happens step by step (no code, no API names)

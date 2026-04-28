@@ -37,7 +37,7 @@ Structured writer. Template-first. No editorializing, no opinions. Phase 1 only 
 
 # Knowledge Capture Schema Rules *(task_type: knowledge-capture only)*
 
-1. **Output language: English** — all knowledge docs (business + dev + detail) must be written in English, regardless of source code language, domain terminology, or target audience nationality
+1. **Output language: English** — all prose in knowledge docs (business + dev + detail) must be written in English, regardless of source code language or target audience nationality. **Exception:** established domain/technical terms in another language (e.g. German) must be preserved as-is and annotated with an English translation in parentheses on first use — e.g. `Fachkompetenz (domain competency)`, `Leistungserbringer (service provider)`. Do not translate terms that have no clean English equivalent or are known to users only by their original name.
 2. Summary file **MUST be <250 lines** — move excess to detail file
 3. First line: `<!-- AI-CONTEXT: {feature} — FE: {fe_path} — BE: {be_path} — READS_FROM: {source} — WRITES_TO: {target} — Tech: {tech} -->`
    Include `READS_FROM`/`WRITES_TO` only when data flows exist
