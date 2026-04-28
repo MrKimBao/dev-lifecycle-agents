@@ -204,6 +204,8 @@ cancel review pr 42                # stop + force cleanup
 
 Each step reports a `perf` block in its output JSON. Orchestrator writes it to `state.metrics.<step>` immediately on receipt — no waiting for pipeline completion.
 
+> ⚠️ **CLI mode:** `tokens_input`, `tokens_output`, `tokens_total`, `context_fill_rate` are unavailable when running outside agent runtime. Use `"N/A (CLI)"`. `duration_ms` should be estimated from wall-clock if available, else `null`. Do **not** omit perf blocks — show `N/A` to remain spec-compliant.
+
 | Metric | Source | Notes |
 |--------|--------|-------|
 | `duration_ms` | Every step | Wall clock for that agent only |

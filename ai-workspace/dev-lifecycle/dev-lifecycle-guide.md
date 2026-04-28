@@ -467,6 +467,8 @@ This means: **you do NOT need to re-describe the agent's persona** in each phase
 
 Mỗi phase trả về `perf` block trong output JSON. Orchestrator ghi vào `state.metrics.<phase>` ngay khi nhận output.
 
+> ⚠️ **CLI mode:** `tokens_total`, `tokens_input`, `context_fill_rate` are unavailable when running outside agent runtime. Use `"N/A (CLI)"`. `duration_ms` should be estimated from wall-clock if available, else `null`. Do **not** omit perf blocks — show `N/A` to remain spec-compliant.
+
 ### Operational Metrics
 
 | Metric | Công thức / Lấy từ | Mục đích |
