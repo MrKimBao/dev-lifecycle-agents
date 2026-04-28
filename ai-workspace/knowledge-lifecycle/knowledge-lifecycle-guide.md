@@ -163,6 +163,8 @@ Orchestrator surfaces the following before the user gate. Always include even if
 revision_loops: {N} | context_budget_exceeded: false
 ```
 
+> ⚠️ When running in CLI (not agent runtime), token metrics are unavailable. Show `N/A` for `tokens_input` and `context_fill_rate` — do **not** omit the table.
+
 ---
 
 ## Mode: update — Pipeline Steps
@@ -238,6 +240,8 @@ This keeps each orchestrator focused on its own concern and avoids cross-orchest
     // mode: update only
     "retry_count": 0,
     "filter_ratio_update": null      // from Validator (Step C)
+    // ⚠️ CLI mode: tokens_* and context_fill_rate are not measurable — set to null.
+    // duration_ms: estimate from step timestamps if tracked, else null.
   }
 }
 ```
@@ -317,6 +321,8 @@ Each step returns a `perf` block. Orchestrator writes it to `state.pipeline.<ste
 | F/C (Auditor/Validator) | ≤ 4 000 tokens | Pass doc paths only — already enforced by Context Contracts |
 
 > **`filter_ratio` target:** < 0.30 — if Auditor consistently > 0.35, Writer output quality is low.
+
+> ⚠️ **CLI mode constraint:** `tokens_total`, `tokens_input`, and `context_fill_rate` are unavailable when running outside agent runtime. Use `"N/A (CLI)"`. `duration_ms` should be estimated from wall-clock if available, else `null`. Do **not** omit the metrics table — show `N/A` to remain spec-compliant while being honest about the limitation.
 
 ---
 
