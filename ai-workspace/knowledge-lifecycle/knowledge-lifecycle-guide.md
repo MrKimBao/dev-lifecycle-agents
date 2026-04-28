@@ -8,7 +8,7 @@
 
 Load when:
 - `knowledge-orchestrator` needs pipeline routing logic, mode decision table, or context contracts
-- `gem-orchestrator` needs to understand how to call knowledge-orchestrator for stale doc updates
+- `gem-orchestrator` needs to understand what to do when knowledge docs are stale (warn user + stop)
 - Debugging a failed capture, stale patch, or inter-orchestrator handoff
 
 > 📐 **Context budget:** ≤ 8 000 tokens. Load by section — do NOT pass the full doc unless needed.
@@ -334,7 +334,7 @@ Each step returns a `perf` block. Orchestrator writes it to `state.pipeline.<ste
 | Live Verifier — external system unreachable | `new` | Skip that source, log in `skipped_sources[]`, continue |
 | Live Verifier — all sources fail | `new` | Log warning, continue without verified_facts (doc still created) |
 | Writer > 2 revision loops | `new` | Escalate to user |
-| Validator fail after 1 retry | `update` | Return `status: "failed"` to caller |
-| Diff Loader — doc not found | `update` | Return `status: "failed", reason: "doc not found"` |
-| Timeout > 60s | `update` | Caller treats as `failed` |
+| Validator fail after 1 retry | `update` | Return `status: "failed"` — shown to user |
+| Diff Loader — doc not found | `update` | Return `status: "failed", reason: "doc not found"` — shown to user |
+| Timeout > 60s | `update` | Return `status: "failed", reason: "timeout"` — shown to user |
 
