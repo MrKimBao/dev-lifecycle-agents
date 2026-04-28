@@ -1,18 +1,18 @@
-# Step 1 · Scope Analysis
+# Step 1 Â· Scope Analysis
 
-> **Status:** ✅ Always runs  
-> **Part of:** [review-lifecycle-summary.md](./review-lifecycle-summary.md)
+> **Status:** âœ… Always runs  
+> **Part of:** [review-lifecycle-guide.md](./review-lifecycle-guide.md)
 
 ---
 
 ## When to Use This Doc
 
 Load when:
-- Step 1 (Scope Analysis) is starting — always runs after setup
+- Step 1 (Scope Analysis) is starting â€” always runs after setup
 - `gem-researcher` is being invoked for PR scope analysis
 - Orchestrator needs FE detection logic or routing rules after Step 1 completes
 
-> 📐 **Context budget:** ≤ 4 000 tokens.
+> ðŸ“ **Context budget:** â‰¤ 4 000 tokens.
 
 Keywords: scope analysis, gem-researcher, changed files, subsystems, FE detection, fe_reviewer_triggered, Always runs
 
@@ -22,9 +22,9 @@ Keywords: scope analysis, gem-researcher, changed files, subsystems, FE detectio
 
 **Agent:** `gem-researcher`
 
-**Primary goal:** Understand the full scope of the PR — what changed, what subsystems are touched, what patterns are used, whether tests exist. Produces a `scope_summary` that is passed as context to ALL subsequent steps.
+**Primary goal:** Understand the full scope of the PR â€” what changed, what subsystems are touched, what patterns are used, whether tests exist. Produces a `scope_summary` that is passed as context to ALL subsequent steps.
 
-**Exit condition:** JSON output returned to Orchestrator → Step 2 · Architecture Critique (if `deep`) or Step 3 · Parallel Review (standard). On failure → ESCALATE immediately.
+**Exit condition:** JSON output returned to Orchestrator â†’ Step 2 Â· Architecture Critique (if `deep`) or Step 3 Â· Parallel Review (standard). On failure â†’ ESCALATE immediately.
 
 ---
 
@@ -33,14 +33,14 @@ Keywords: scope analysis, gem-researcher, changed files, subsystems, FE detectio
 ```mermaid
 flowchart LR
     IN([Worktree ready + base branch]) --> S1
-    S1[git diff --name-only\n→ changed file list] --> S2
-    S2[git diff --stat\n→ size / scope] --> S3
+    S1[git diff --name-only\nâ†’ changed file list] --> S2
+    S2[git diff --stat\nâ†’ size / scope] --> S3
     S3[Read key changed files\nfor context] --> S4
-    S4{plugins/★/src/\nfiles detected?}
+    S4{plugins/â˜…/src/\nfiles detected?}
     S4 -->|yes| S5a[fe_reviewer_triggered = true\nCollect FE file list]
     S4 -->|no| S5b[fe_reviewer_triggered = false]
     S5a & S5b --> S6
-    S6[Identify subsystems\npatterns · test coverage] --> OUT([JSON → Step 2 or Step 3])
+    S6[Identify subsystems\npatterns Â· test coverage] --> OUT([JSON â†’ Step 2 or Step 3])
 ```
 
 ---
@@ -62,19 +62,19 @@ The researcher determines:
 - Which subsystems are touched (`authentication`, `api-router`, `frontend-plugin`, etc.)
 - What coding patterns are used (`express-router`, `jest`, `backstage-plugin`)
 - Whether tests exist, are absent, or are partial
-- Whether `plugins/*/src/**/*.{ts,tsx}` files changed → auto-triggers `fe-backstage-reviewer` in Step 3c
+- Whether `plugins/*/src/**/*.{ts,tsx}` files changed â†’ auto-triggers `fe-backstage-reviewer` in Step 3c
 
 ---
 
-## 🤖 Agent Composition
+## ðŸ¤– Agent Composition
 
 | Role | Agent | Note |
 |------|-------|------|
-| **Scope analyzer** | `gem-researcher` | ✅ Installed. Reads all changed files from worktree. Maps patterns and subsystems. |
+| **Scope analyzer** | `gem-researcher` | âœ… Installed. Reads all changed files from worktree. Maps patterns and subsystems. |
 
 ---
 
-## Invocation Prompt (Orchestrator → `gem-researcher`)
+## Invocation Prompt (Orchestrator â†’ `gem-researcher`)
 
 ```
 You are being invoked as Scope Analyzer for PR #{pr_id}.
@@ -93,7 +93,7 @@ Changed file list: {git diff --name-only output}
 Git stat: {git diff --stat output}
 
 ## What to read
-Read the most important changed files to understand context — not all files, focus on:
+Read the most important changed files to understand context â€” not all files, focus on:
 - Entry points / main logic files
 - New/modified components or services
 - Test files (if any)
@@ -108,7 +108,7 @@ Return JSON:
   "test_coverage": "present|absent|partial",
   "fe_files": ["plugins/my-plugin/src/..."],       // [] if none
   "fe_reviewer_triggered": true|false,             // true if plugins/*/src/ files found
-  "scope_summary": "Short plain-text summary (2–4 sentences) of what this PR does",
+  "scope_summary": "Short plain-text summary (2â€“4 sentences) of what this PR does",
   "perf": {
     "started_at": "<ISO-8601 when you started>",
     "completed_at": "<ISO-8601 now>",
@@ -121,14 +121,14 @@ Return JSON:
 }
 
 ## Constraints
-- Read files from {worktree_path} only — never from repo root
+- Read files from {worktree_path} only â€” never from repo root
 - Do NOT suggest code changes
 - scope_summary must be factual, not evaluative
 ```
 
 ---
 
-## Output Contract (Step 1 → Orchestrator)
+## Output Contract (Step 1 â†’ Orchestrator)
 
 ```json
 {
@@ -163,22 +163,22 @@ Return JSON:
 Orchestrator reads Step 1 output:
 
   if keywords contains "deep":
-    → invoke Step 2 (Architecture Critique) with researcher output
-    → after Step 2: invoke Step 3 (Parallel Review)
+    â†’ invoke Step 2 (Architecture Critique) with researcher output
+    â†’ after Step 2: invoke Step 3 (Parallel Review)
 
   else:
-    → invoke Step 3 (Parallel Review) directly
+    â†’ invoke Step 3 (Parallel Review) directly
 
   if fe_reviewer_triggered == true:
-    → include fe-backstage-reviewer in Step 3 parallel set
-    → pass fe_files list to fe-backstage-reviewer
+    â†’ include fe-backstage-reviewer in Step 3 parallel set
+    â†’ pass fe_files list to fe-backstage-reviewer
 
   if fe_reviewer_triggered == false:
-    → set state.pipeline.fe_reviewer = "skipped"
-    → do NOT invoke fe-backstage-reviewer
+    â†’ set state.pipeline.fe_reviewer = "skipped"
+    â†’ do NOT invoke fe-backstage-reviewer
 
   if keywords contains "fast" AND fe_reviewer_triggered == false:
-    → parallel cap = 4 (only 2 reviewers anyway)
+    â†’ parallel cap = 4 (only 2 reviewers anyway)
 ```
 
 ---
@@ -187,7 +187,7 @@ Orchestrator reads Step 1 output:
 
 | Failure | Policy |
 |---------|--------|
-| `git diff` returns empty | ❌ **ESCALATE** — branch may not exist on remote or is already merged |
-| Researcher fails to return JSON | ❌ **ESCALATE** — scope context is required by all downstream steps |
-| Researcher times out | ❌ **ESCALATE** — same reason |
+| `git diff` returns empty | âŒ **ESCALATE** â€” branch may not exist on remote or is already merged |
+| Researcher fails to return JSON | âŒ **ESCALATE** â€” scope context is required by all downstream steps |
+| Researcher times out | âŒ **ESCALATE** â€” same reason |
 

@@ -38,7 +38,7 @@ Structural stickler. Every section must exist. TBDs must resolve. Cross-refs mus
 
 # Schema Checklist (enforce for every summary file)
 
-- [ ] Line count ≤ 150
+- [ ] Line count ≤ 250 (dev compact doc — `dev/{name}.md` only)
 - [ ] First line is `<!-- AI-CONTEXT: ... -->` with correct fields
 - [ ] Sections present in order: Overview → Architecture → Key Concepts → Key Behaviors → Dependencies → Metadata → Next Steps
 - [ ] Architecture section has at least one mermaid diagram

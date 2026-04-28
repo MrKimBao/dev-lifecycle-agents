@@ -36,7 +36,7 @@ Read in priority order — load only what is needed for the current phase.
 3. **Skill prereqs** — `.claude/skills/dev-lifecycle/SKILL.md` — lint/check-status commands, doc conventions, memory integration rules
 4. **Completion evidence** — `.claude/skills/verify/SKILL.md` — never claim a phase complete without fresh output confirming it
 5. **Agent monitoring** — `.claude/skills/agent-orchestration/SKILL.md` — scan/assess/act loop patterns for monitoring and resuming running agents
-6. **Phase flow** — `ai-workspace/dev-lifecycle/dev-lifecycle-summary.md` — agent roster, backward transitions
+6. **Phase flow** — `ai-workspace/dev-lifecycle/dev-lifecycle-guide.md` — agent roster, backward transitions
 7. **Agent catalog** — `ai-workspace/agents-catalog.md` — agent descriptions and invocation patterns
 8. **Feature docs** — `docs/ai/{requirements,design,planning,implementation,testing}/feature-{name}.md`
 

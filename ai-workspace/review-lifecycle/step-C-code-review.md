@@ -1,19 +1,19 @@
-# Step 3 · Parallel Review
+# Step 3 Â· Parallel Review
 
-> **Status:** ✅ Always runs (3a + 3b always; 3c conditional)
-> **Part of:** [review-lifecycle-summary.md](./review-lifecycle-summary.md)
+> **Status:** âœ… Always runs (3a + 3b always; 3c conditional)
+> **Part of:** [review-lifecycle-guide.md](./review-lifecycle-guide.md)
 
 ---
 
 ## When to Use This Doc
 
 Load when:
-- Step 3 (Parallel Review) is starting — 3a + 3b always run, 3c conditional on FE detection
+- Step 3 (Parallel Review) is starting â€” 3a + 3b always run, 3c conditional on FE detection
 - Checking invocation prompts for `gem-reviewer`, `se-security-reviewer`, or `fe-backstage-reviewer`
 - Determining active reviewer set based on keywords + `fe_reviewer_triggered`
-- `security` keyword active → `se-security-reviewer` runs 2 OWASP passes
+- `security` keyword active â†’ `se-security-reviewer` runs 2 OWASP passes
 
-> 📐 **Context budget:** ≤ 8 000 tokens total. Pass FE diffs only to 3c — NOT full diff.
+> ðŸ“ **Context budget:** â‰¤ 8 000 tokens total. Pass FE diffs only to 3c â€” NOT full diff.
 
 Keywords: parallel review, code review, security review, FE review, gem-reviewer, se-security-reviewer, fe-backstage-reviewer, Always runs
 
@@ -21,11 +21,11 @@ Keywords: parallel review, code review, security review, FE review, gem-reviewer
 
 ## Overview
 
-**Agents:** `gem-reviewer` (3a) ∥ `se-security-reviewer` (3b) ∥ `fe-backstage-reviewer` (3c, conditional)
+**Agents:** `gem-reviewer` (3a) âˆ¥ `se-security-reviewer` (3b) âˆ¥ `fe-backstage-reviewer` (3c, conditional)
 
-**Primary goal:** Comprehensive review of all changed code — correctness + security + frontend (when applicable) — all running in parallel for maximum efficiency.
+**Primary goal:** Comprehensive review of all changed code â€” correctness + security + frontend (when applicable) â€” all running in parallel for maximum efficiency.
 
-**Exit condition:** All active agents complete (any failures logged, not blocking) → Step 4 · Signal Filter.
+**Exit condition:** All active agents complete (any failures logged, not blocking) â†’ Step 4 Â· Signal Filter.
 
 ---
 
@@ -40,15 +40,15 @@ flowchart LR
     ROUTE --> C2
     ROUTE -->|fe_reviewer_triggered == true| C3
 
-    C1["3a · gem-reviewer\nGeneral code review"]
-    C2["3b · se-security-reviewer\nSecurity review"]
-    C3["3c · fe-backstage-reviewer\nBUI + React 18 review"]
+    C1["3a Â· gem-reviewer\nGeneral code review"]
+    C2["3b Â· se-security-reviewer\nSecurity review"]
+    C3["3c Â· fe-backstage-reviewer\nBUI + React 18 review"]
 
     C1 --> WAIT
     C2 --> WAIT
     C3 --> WAIT
 
-    WAIT([Wait for all active agents]) --> OUT([Step 4 — Signal Filter])
+    WAIT([Wait for all active agents]) --> OUT([Step 4 â€” Signal Filter])
 ```
 
 **Parallel caps:**
@@ -61,7 +61,7 @@ flowchart LR
 
 ---
 
-## Step 3a — General Code Review (`gem-reviewer`)
+## Step 3a â€” General Code Review (`gem-reviewer`)
 
 **Checks:** correctness, maintainability, naming consistency, code duplication, error handling, edge cases, test quality, coding standards compliance.
 
@@ -119,11 +119,11 @@ Return JSON:
 
 ---
 
-## Step 3b — Security Review (`se-security-reviewer`)
+## Step 3b â€” Security Review (`se-security-reviewer`)
 
 **Checks:** OWASP Top 10, injection, authentication/authorization gaps, secrets in code, input validation, data exposure, missing rate limiting, insecure defaults, dependency vulnerabilities.
 
-When `security` keyword active → runs **two passes**: general + OWASP Top 10 checklist explicitly.
+When `security` keyword active â†’ runs **two passes**: general + OWASP Top 10 checklist explicitly.
 
 ### Invocation Prompt
 
@@ -175,16 +175,16 @@ Return JSON:
 }
 
 ## Constraints
-- Only report issues in changed code — not pre-existing issues in unchanged code
+- Only report issues in changed code â€” not pre-existing issues in unchanged code
 - Every MUST_FIX must have a concrete exploit path, not just a theoretical risk
 - Read files from {worktree_path} only
 ```
 
 ---
 
-## Step 3c — Frontend Plugin Review (`fe-backstage-reviewer`) — Conditional
+## Step 3c â€” Frontend Plugin Review (`fe-backstage-reviewer`) â€” Conditional
 
-**Triggers automatically** when `gem-researcher` (Step 1 · Scope Analysis) detects changed files matching `plugins/*/src/**/*.{ts,tsx}`.
+**Triggers automatically** when `gem-researcher` (Step 1 Â· Scope Analysis) detects changed files matching `plugins/*/src/**/*.{ts,tsx}`.
 
 **Does NOT trigger when:**
 - No changed files under `plugins/*/src/`
@@ -195,7 +195,7 @@ Return JSON:
 | Category | What is verified |
 |----------|-----------------|
 | **BUI compliance** | BUI-first, no `makeStyles`, no `@material-ui/icons`, CSS Modules |
-| **MuiV7ThemeProvider** | MUI v7 components (Button, Chip, Card, Alert, Divider, IconButton) wrapped — always MUST_FIX when missing |
+| **MuiV7ThemeProvider** | MUI v7 components (Button, Chip, Card, Alert, Divider, IconButton) wrapped â€” always MUST_FIX when missing |
 | **React 18 patterns** | Hooks rules, no class components, async patterns, cleanup on unmount |
 | **TypeScript quality** | Strict types, no implicit `any`, proper generics |
 | **Testing standards** | `TestApiProvider`, `MemoryRouter`, co-located tests |
@@ -219,11 +219,11 @@ Coding standards: AGENTS.md + .github/coding-standards.md + .github/frontend-plu
 
 ## What to check (file by file)
 BUI compliance:
-- No makeStyles — use CSS Modules
-- No @material-ui/icons — use @remixicon/react
+- No makeStyles â€” use CSS Modules
+- No @material-ui/icons â€” use @remixicon/react
 - BUI-first: prefer @backstage/ui components (Box, Text, Flex, Button, Card, Tag)
-- MUI v7 components (Button, Chip, Card, Alert, Divider, IconButton) → must be wrapped in <MuiV7ThemeProvider>
-- Backstage components (InfoCard, LinkButton, Link, Progress) → no wrapper needed
+- MUI v7 components (Button, Chip, Card, Alert, Divider, IconButton) â†’ must be wrapped in <MuiV7ThemeProvider>
+- Backstage components (InfoCard, LinkButton, Link, Progress) â†’ no wrapper needed
 
 React 18 patterns:
 - No import React at top of file (uses react-jsx transform)
@@ -235,13 +235,13 @@ React 18 patterns:
 TypeScript:
 - No implicit any
 - Props interface defined for all components
-- Proper generics — no type casting with as unless justified
+- Proper generics â€” no type casting with as unless justified
 
 Testing:
 - Tests co-located with component (Component.test.tsx next to Component.tsx)
 - TestApiProvider wrapping API-dependent tests
 - MemoryRouter for route-dependent tests
-- No JSDoc in code files — document in README.md
+- No JSDoc in code files â€” document in README.md
 
 Plugin structure:
 - plugin.ts exports createPlugin + createRoutableExtension
@@ -278,14 +278,14 @@ Return JSON:
 }
 
 ## Constraints
-- Only review files under plugins/*/src/ — ignore backend, config, test infra
-- Every finding needs file:line — no vague findings
+- Only review files under plugins/*/src/ â€” ignore backend, config, test infra
+- Every finding needs file:line â€” no vague findings
 - Read files from {worktree_path} only
 ```
 
 ---
 
-## Output Contract (Step 3 → Orchestrator)
+## Output Contract (Step 3 â†’ Orchestrator)
 
 All three agents return findings in the same format. Orchestrator collects and passes all to Step 4:
 
@@ -293,7 +293,7 @@ All three agents return findings in the same format. Orchestrator collects and p
 {
   "3a_findings": [ /* gem-reviewer findings */ ],
   "3b_findings": [ /* se-security-reviewer findings */ ],
-  "3c_findings": [ /* fe-backstage-reviewer findings — null if skipped */ ],
+  "3c_findings": [ /* fe-backstage-reviewer findings â€” null if skipped */ ],
   "3a_impression": "string",
   "3b_impression": "string",
   "3c_impression": "string | null",
@@ -338,7 +338,7 @@ All three agents return findings in the same format. Orchestrator collects and p
 }
 ```
 
-> `perf.wall_clock_ms` = time from the moment Step 3 started (all agents dispatched) to the moment the last agent finished — always ≤ max(3a, 3b, 3c) duration, not the sum.
+> `perf.wall_clock_ms` = time from the moment Step 3 started (all agents dispatched) to the moment the last agent finished â€” always â‰¤ max(3a, 3b, 3c) duration, not the sum.
 > Orchestrator writes `perf` block to `state.metrics.reviewers`. If an agent was skipped: its key is `"skipped"` instead of an object.
 
 ---
@@ -347,8 +347,8 @@ All three agents return findings in the same format. Orchestrator collects and p
 
 | Agent | Policy |
 |-------|--------|
-| `gem-reviewer` fails | ⚠️ Log to `escalations[]`, continue with C2/C3 findings |
-| `se-security-reviewer` fails | ⚠️ Log to `escalations[]`, continue with C1/C3 findings |
-| `fe-backstage-reviewer` fails | ⚠️ Log to `escalations[]`, continue with C1/C2 findings |
-| All 3 fail | ❌ **ESCALATE** — no findings to synthesize |
+| `gem-reviewer` fails | âš ï¸ Log to `escalations[]`, continue with C2/C3 findings |
+| `se-security-reviewer` fails | âš ï¸ Log to `escalations[]`, continue with C1/C3 findings |
+| `fe-backstage-reviewer` fails | âš ï¸ Log to `escalations[]`, continue with C1/C2 findings |
+| All 3 fail | âŒ **ESCALATE** â€” no findings to synthesize |
 

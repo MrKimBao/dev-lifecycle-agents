@@ -1,19 +1,19 @@
-# Step 0 — Setup (Worktree Lifecycle)
+# Step 0 â€” Setup (Worktree Lifecycle)
 
-> **Status:** ✅ Always runs  
-> **Part of:** [review-lifecycle-summary.md](./review-lifecycle-summary.md)
+> **Status:** âœ… Always runs  
+> **Part of:** [review-lifecycle-guide.md](./review-lifecycle-guide.md)
 
 ---
 
 ## When to Use This Doc
 
 Load when:
-- `review-orchestrator` is starting — this step ALWAYS runs first
+- `review-orchestrator` is starting â€” this step ALWAYS runs first
 - Worktree creation, git fetch, or cleanup logic is needed
 - Debugging a failed `git fetch` or `git worktree add`
 - Checking the initial state file schema written at setup
 
-> 📐 **Context budget:** ≤ 4 000 tokens.
+> ðŸ“ **Context budget:** â‰¤ 4 000 tokens.
 
 Keywords: setup, worktree, git fetch, git worktree add, cleanup, isolation, worktree_ready, Always runs
 
@@ -25,7 +25,7 @@ Keywords: setup, worktree, git fetch, git worktree add, cleanup, isolation, work
 
 **Primary goal:** Fetch the PR branch from remote, create an isolated git worktree scoped to that branch, write the initial state file. All subsequent agents read files **exclusively** from this worktree path.
 
-**Exit condition:** `state.worktree_ready = true` → proceed to Step 1 · Scope Analysis. If any git command fails → ESCALATE immediately (no retry).
+**Exit condition:** `state.worktree_ready = true` â†’ proceed to Step 1 Â· Scope Analysis. If any git command fails â†’ ESCALATE immediately (no retry).
 
 ---
 
@@ -37,17 +37,17 @@ flowchart LR
     S1[Create state file\nai-workspace/temp/review-state-pr-42.json] --> S2
     S2[git fetch origin\nplugin-branch] --> S3
     S3{fetch ok?}
-    S3 -->|fail| ESC(["🚨 ESCALATE\ncannot reach origin"])
+    S3 -->|fail| ESC(["ðŸš¨ ESCALATE\ncannot reach origin"])
     S3 -->|ok| S4
     S4[git worktree add\n.worktrees/review-pr-42\norigin/branch] --> S5
     S5{worktree ok?}
     S5 -->|fail: already checked out| S5a[retry with --no-checkout\n+ manual checkout inside]
-    S5 -->|fail: other| ESC2(["🚨 ESCALATE\nworktree add failed"])
+    S5 -->|fail: other| ESC2(["ðŸš¨ ESCALATE\nworktree add failed"])
     S5 -->|ok| S6
     S5a --> S6
     S6[git -C worktree status\nverify clean]
     S6 --> S7[state.worktree_ready = true\nwrite state file]
-    S7 --> OUT([Proceed to Step 1 · Scope Analysis])
+    S7 --> OUT([Proceed to Step 1 Â· Scope Analysis])
 ```
 
 ---
@@ -73,13 +73,13 @@ git -C .worktrees/review-pr-{id} checkout
 
 ## Multiple Parallel Reviews
 
-Each review gets its own isolated worktree — user's main working tree is completely unaffected:
+Each review gets its own isolated worktree â€” user's main working tree is completely unaffected:
 
 ```
 .worktrees/
-├── review-pr-42/   ← reviewing PR #42
-├── review-pr-43/   ← reviewing PR #43 simultaneously
-└── review-pr-44/   ← queued
+â”œâ”€â”€ review-pr-42/   â† reviewing PR #42
+â”œâ”€â”€ review-pr-43/   â† reviewing PR #43 simultaneously
+â””â”€â”€ review-pr-44/   â† queued
 ```
 
 ---
@@ -90,7 +90,7 @@ Each review gets its own isolated worktree — user's main working tree is compl
 git worktree remove --force .worktrees/review-pr-{id}
 ```
 
-**This runs on every exit path** — success, failure, escalation, or cancel.
+**This runs on every exit path** â€” success, failure, escalation, or cancel.
 
 **Cleanup guard:**
 ```
@@ -102,8 +102,8 @@ on_exit:
     write state file
 ```
 
-> ⚠️ NEVER run `git worktree remove` before the review report has been written.  
-> ⚠️ An orphaned worktree WILL block future `git worktree add` for the same branch — cleanup is non-negotiable.
+> âš ï¸ NEVER run `git worktree remove` before the review report has been written.  
+> âš ï¸ An orphaned worktree WILL block future `git worktree add` for the same branch â€” cleanup is non-negotiable.
 
 ---
 
@@ -134,7 +134,7 @@ on_exit:
   "escalations": [],
   "created_at": "ISO-8601",
   "completed_at": null,
-  // ── Performance Metrics ──────────────────────────────────────────────────
+  // â”€â”€ Performance Metrics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   "metrics": {
     "setup":       null,  // { duration_ms, git_fetch_ms, worktree_create_ms }
     "researcher":  null,  // { duration_ms, tokens_input, tokens_output, tokens_total, context_fill_rate, files_read }
@@ -142,12 +142,12 @@ on_exit:
     "reviewers":   null,  // { wall_clock_ms, "3a": {...}, "3b": {...}, "3c": {...}|"skipped" }
     "doublecheck": null,  // { duration_ms, tokens_input, tokens_output, tokens_total, context_fill_rate, findings_in, findings_out }
     "coordinator": null,  // { duration_ms, tokens_input, tokens_output, tokens_total, context_fill_rate }
-    "totals":      null   // written by coordinator — see step-E-coordinator.md
+    "totals":      null   // written by coordinator â€” see step-E-coordinator.md
   }
 }
 ```
 
-### Perf — Setup Block
+### Perf â€” Setup Block
 
 Orchestrator records git timing immediately after each command:
 
@@ -167,9 +167,9 @@ Orchestrator records git timing immediately after each command:
 ## Escalation Format
 
 ```
-🚨 REVIEW ESCALATION — PR #{id}
+ðŸš¨ REVIEW ESCALATION â€” PR #{id}
 
-Step: Setup — git fetch / git worktree add
+Step: Setup â€” git fetch / git worktree add
 Reason: {reason}
 
 To retry:  "review pr {id}"
@@ -185,8 +185,8 @@ Worktree: {removed | still present at .worktrees/review-pr-{id}}
 
 | Failure | Cause | Action |
 |---------|-------|--------|
-| `git fetch` fails | No network / origin unreachable / branch doesn't exist on remote | ESCALATE — cannot proceed |
-| `git worktree add` fails — branch already checked out | Another agent is using this branch | Retry with `--no-checkout` + checkout inside |
-| `git worktree add` fails — other reason | Disk full, permission error | ESCALATE |
+| `git fetch` fails | No network / origin unreachable / branch doesn't exist on remote | ESCALATE â€” cannot proceed |
+| `git worktree add` fails â€” branch already checked out | Another agent is using this branch | Retry with `--no-checkout` + checkout inside |
+| `git worktree add` fails â€” other reason | Disk full, permission error | ESCALATE |
 | Worktree status shows uncommitted changes | Should not happen for remote branch | Log warning, proceed |
 

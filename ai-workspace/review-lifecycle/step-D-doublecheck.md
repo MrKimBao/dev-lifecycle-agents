@@ -1,19 +1,19 @@
-# Step 4 · Signal Filter
+# Step 4 Â· Signal Filter
 
-> **Status:** ✅ Always runs  
-> **Part of:** [review-lifecycle-summary.md](./review-lifecycle-summary.md)
+> **Status:** âœ… Always runs  
+> **Part of:** [review-lifecycle-guide.md](./review-lifecycle-guide.md)
 
 ---
 
 ## When to Use This Doc
 
 Load when:
-- Step 4 (Signal Filter) is starting — always runs after Step 3
+- Step 4 (Signal Filter) is starting â€” always runs after Step 3
 - `doublecheck` is filtering raw findings for hallucinations, pre-existing issues, and duplicates
-- Step 3 partially failed — checking if null input handling applies
+- Step 3 partially failed â€” checking if null input handling applies
 - Checking deduplication rules for findings from multiple reviewers
 
-> 📐 **Context budget:** ≤ 4 000 tokens. Pass actual diff + raw findings, NOT full file contents.
+> ðŸ“ **Context budget:** â‰¤ 4 000 tokens. Pass actual diff + raw findings, NOT full file contents.
 
 Keywords: signal filter, doublecheck, hallucination removal, false positives, deduplication, pre-existing issues, severity adjustment, Always runs
 
@@ -25,18 +25,18 @@ Keywords: signal filter, doublecheck, hallucination removal, false positives, de
 
 **Primary goal:** Cross-check every finding from Steps B and C against the actual PR diff. Remove hallucinated findings, out-of-scope issues (unchanged code), duplicate findings across reviewers, and low-confidence speculation. Confirm severity classifications are justified.
 
-**Exit condition:** Filtered findings returned to Orchestrator → Step 5 (Verdict & Report). On failure → skip filter, forward raw findings to Step 5 with warning in report header.
+**Exit condition:** Filtered findings returned to Orchestrator â†’ Step 5 (Verdict & Report). On failure â†’ skip filter, forward raw findings to Step 5 with warning in report header.
 
 ---
 
 ## Why This Step Exists
 
 Without `doublecheck`, review reports suffer from:
-- ❌ **Hallucinated findings** — issues reported in code that was never changed
-- ❌ **Pre-existing issues** — problems that existed before this PR and are not the author's responsibility
-- ❌ **Duplicate findings** — `gem-reviewer` and `se-security-reviewer` flagging the same line for different reasons
-- ❌ **Severity inflation** — SUGGESTION promoted to MUST_FIX without justification
-- ❌ **Speculation** — "this could potentially be a problem" with no evidence
+- âŒ **Hallucinated findings** â€” issues reported in code that was never changed
+- âŒ **Pre-existing issues** â€” problems that existed before this PR and are not the author's responsibility
+- âŒ **Duplicate findings** â€” `gem-reviewer` and `se-security-reviewer` flagging the same line for different reasons
+- âŒ **Severity inflation** â€” SUGGESTION promoted to MUST_FIX without justification
+- âŒ **Speculation** â€” "this could potentially be a problem" with no evidence
 
 ---
 
@@ -46,22 +46,22 @@ Without `doublecheck`, review reports suffer from:
 flowchart LR
     IN([Step 2/3 findings + diff]) --> D1
     D1[For each finding:\nverify location against diff] --> D2
-    D2[Remove:\n• unchanged code findings\n• duplicate findings\n• unsupported speculation] --> D3
+    D2[Remove:\nâ€¢ unchanged code findings\nâ€¢ duplicate findings\nâ€¢ unsupported speculation] --> D3
     D3[Confirm severity:\nare MUST_FIX findings truly blocking?] --> D4
-    D4[Produce filtered_findings list\n+ removal log] --> OUT([Step 5 — Verdict & Report])
+    D4[Produce filtered_findings list\n+ removal log] --> OUT([Step 5 â€” Verdict & Report])
 ```
 
 ---
 
-## 🤖 Agent Composition
+## ðŸ¤– Agent Composition
 
 | Role | Agent | Note |
 |------|-------|------|
-| **Anti-hallucination filter** | `doublecheck` | ✅ Installed. Read-only — never rewrites findings, only removes or confirms. |
+| **Anti-hallucination filter** | `doublecheck` | âœ… Installed. Read-only â€” never rewrites findings, only removes or confirms. |
 
 ---
 
-## Invocation Prompt (Orchestrator → `doublecheck`)
+## Invocation Prompt (Orchestrator â†’ `doublecheck`)
 
 ```
 You are being invoked as Signal Filter for PR #{pr_id}.
@@ -79,11 +79,11 @@ Confirm MUST_FIX findings: each one must have a clear, demonstrable impact.
 Downgrade to SUGGESTION if the risk is theoretical only.
 
 ## Input
-PR diff: {git diff content — actual lines changed}
-gem-critic findings: {Step 2 architecture_findings — null if step skipped}
+PR diff: {git diff content â€” actual lines changed}
+gem-critic findings: {Step 2 architecture_findings â€” null if step skipped}
 gem-reviewer findings: {Step 3 3a_findings}
 se-security-reviewer findings: {Step 3 3b_findings}
-fe-backstage-reviewer findings: {Step 3 3c_findings — null if skipped}
+fe-backstage-reviewer findings: {Step 3 3c_findings â€” null if skipped}
 
 ## Output Required
 Return JSON:
@@ -100,11 +100,11 @@ Return JSON:
   ],
   "removed_count": 3,
   "removed_reasons": [
-    "finding at router.ts:88 was about unchanged code — line not in diff",
-    "duplicate: both gem-reviewer and se-security-reviewer flagged MyComp.tsx:21 for missing error handling — merged"
+    "finding at router.ts:88 was about unchanged code â€” line not in diff",
+    "duplicate: both gem-reviewer and se-security-reviewer flagged MyComp.tsx:21 for missing error handling â€” merged"
   ],
   "severity_adjustments": [
-    "MyComp.tsx:31: downgraded MUST_FIX → SUGGESTION — risk is theoretical, no concrete exploit path shown"
+    "MyComp.tsx:31: downgraded MUST_FIX â†’ SUGGESTION â€” risk is theoretical, no concrete exploit path shown"
   ],
   "perf": {
     "started_at": "<ISO-8601 when you started>",
@@ -122,15 +122,15 @@ Return JSON:
 
 ## Constraints
 
-- DO NOT add new findings — this step is a filter, NEVER a reviewer
-- DO NOT rewrite the text of surviving findings — only remove or tag
-- MUST keep borderline findings — err on the side of including
+- DO NOT add new findings â€” this step is a filter, NEVER a reviewer
+- DO NOT rewrite the text of surviving findings â€” only remove or tag
+- MUST keep borderline findings â€” err on the side of including
 - MUST verify line numbers against the actual diff content provided
 ```
 
 ---
 
-## Output Contract (Step 4 → Orchestrator)
+## Output Contract (Step 4 â†’ Orchestrator)
 
 ```json
 {
@@ -171,9 +171,9 @@ Return JSON:
 
 | Failure | Policy |
 |---------|--------|
-| `doublecheck` fails | ⚠️ Skip filter entirely. Forward Step 3 raw findings directly to Step 5. Note in report header: "⚠️ Signal filter skipped — findings unverified" |
+| `doublecheck` fails | âš ï¸ Skip filter entirely. Forward Step 3 raw findings directly to Step 5. Note in report header: "âš ï¸ Signal filter skipped â€” findings unverified" |
 | `doublecheck` times out | Same as failure |
-| `doublecheck` returns no findings | ✅ Valid — all issues were pre-existing or hallucinated. Proceed with empty list → likely `APPROVED` verdict |
+| `doublecheck` returns no findings | âœ… Valid â€” all issues were pre-existing or hallucinated. Proceed with empty list â†’ likely `APPROVED` verdict |
 
 ---
 
@@ -184,7 +184,7 @@ When the same issue appears in multiple reviewer outputs:
 | Scenario | Action |
 |----------|--------|
 | Same file + same line + same issue | Keep **highest severity** version, discard rest. Note in `removed_reasons`. |
-| Same file + same line + different categories | Keep both — they're different perspectives |
-| Same issue, different files | Keep both — separate occurrences |
-| Architecture finding + code finding on same issue | Keep both — different lenses |
+| Same file + same line + different categories | Keep both â€” they're different perspectives |
+| Same issue, different files | Keep both â€” separate occurrences |
+| Architecture finding + code finding on same issue | Keep both â€” different lenses |
 

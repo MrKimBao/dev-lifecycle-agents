@@ -1,19 +1,19 @@
-# Step 5 · Verdict & Report
+# Step 5 Â· Verdict & Report
 
-> **Status:** ✅ Always runs  
-> **Part of:** [review-lifecycle-summary.md](./review-lifecycle-summary.md)
+> **Status:** âœ… Always runs  
+> **Part of:** [review-lifecycle-guide.md](./review-lifecycle-guide.md)
 
 ---
 
 ## When to Use This Doc
 
 Load when:
-- Step 5 (Verdict & Report) is starting — always runs after Step 4
+- Step 5 (Verdict & Report) is starting â€” always runs after Step 4
 - `review-coordinator` is synthesizing findings and writing the PR review report
 - Checking output report format, verdict logic, or tone guidelines
 - Orchestrator is computing `state.metrics.totals` after Step 5 completes
 
-> 📐 **Context budget:** ≤ 6 000 tokens. Pass `filtered_findings` + `scope_summary` only — NOT raw diffs.
+> ðŸ“ **Context budget:** â‰¤ 6 000 tokens. Pass `filtered_findings` + `scope_summary` only â€” NOT raw diffs.
 
 Keywords: verdict, report, review-coordinator, APPROVED, NEEDS_CHANGES, MUST_FIX, report format, totals, tone guidelines, Always runs
 
@@ -23,9 +23,9 @@ Keywords: verdict, report, review-coordinator, APPROVED, NEEDS_CHANGES, MUST_FIX
 
 **Agent:** `review-coordinator`
 
-**Primary goal:** Synthesize all filtered findings from Step 4 · Signal Filter into a structured, severity-grouped report. Determine the final verdict. Write the report file. Surface results to user.
+**Primary goal:** Synthesize all filtered findings from Step 4 Â· Signal Filter into a structured, severity-grouped report. Determine the final verdict. Write the report file. Surface results to user.
 
-**Exit condition:** Report written to `ai-workspace/reviews/pr-{id}-review.md` → Orchestrator triggers cleanup → done. On failure → ESCALATE (cannot produce report without synthesis).
+**Exit condition:** Report written to `ai-workspace/reviews/pr-{id}-review.md` â†’ Orchestrator triggers cleanup â†’ done. On failure â†’ ESCALATE (cannot produce report without synthesis).
 
 
 ## Internal Flow
@@ -33,41 +33,41 @@ Keywords: verdict, report, review-coordinator, APPROVED, NEEDS_CHANGES, MUST_FIX
 ```mermaid
 flowchart LR
     IN([Step 4 filtered_findings\n+ Step 1 scope_summary]) --> E1
-    E1[Group findings by severity:\nMUST_FIX · SUGGESTION · NITPICK] --> E2
+    E1[Group findings by severity:\nMUST_FIX Â· SUGGESTION Â· NITPICK] --> E2
     E2[Determine overall verdict] --> E3
     E3[Write report file\nai-workspace/reviews/pr-{id}-review.md] --> E4
     E4[Return JSON output\nto Orchestrator] --> OUT([Orchestrator triggers\nworktree cleanup])
 
     E2 --> V1{Any MUST_FIX?}
-    V1 -->|yes| VD1[🔴 MUST_FIX]
+    V1 -->|yes| VD1[ðŸ”´ MUST_FIX]
     V1 -->|no| V2{Any SUGGESTION?}
-    V2 -->|yes| VD2[🟡 NEEDS_CHANGES]
-    V2 -->|no| VD3[✅ APPROVED]
+    V2 -->|yes| VD2[ðŸŸ¡ NEEDS_CHANGES]
+    V2 -->|no| VD3[âœ… APPROVED]
 ```
 
 ---
 
-## 🤖 Agent Composition
+## ðŸ¤– Agent Composition
 
 | Role | Agent | Note |
 |------|-------|------|
-| **Synthesis coordinator** | `review-coordinator` | 📋 Custom agent — shared with dev-lifecycle Phase 2, 3, 6, 8. Different invocation for review pipeline. |
+| **Synthesis coordinator** | `review-coordinator` | ðŸ“‹ Custom agent â€” shared with dev-lifecycle Phase 2, 3, 6, 8. Different invocation for review pipeline. |
 
 ---
 
-## Invocation Prompt (Orchestrator → `review-coordinator`)
+## Invocation Prompt (Orchestrator â†’ `review-coordinator`)
 
 ```
-You are being invoked as Review Coordinator for PR #{pr_id} — Step 5: Verdict & Report.
+You are being invoked as Review Coordinator for PR #{pr_id} â€” Step 5: Verdict & Report.
 
 ## Your Task
 Synthesize all filtered findings and produce the final review report.
 
-1. Group findings by severity: MUST_FIX → SUGGESTION → NITPICK
+1. Group findings by severity: MUST_FIX â†’ SUGGESTION â†’ NITPICK
 2. Determine overall verdict:
-   - Any MUST_FIX present → verdict = MUST_FIX
-   - Only SUGGESTION → verdict = NEEDS_CHANGES
-   - Only NITPICK or empty → verdict = APPROVED
+   - Any MUST_FIX present â†’ verdict = MUST_FIX
+   - Only SUGGESTION â†’ verdict = NEEDS_CHANGES
+   - Only NITPICK or empty â†’ verdict = APPROVED
 3. Write the report to: {output_path}
 4. Return JSON verdict to Orchestrator
 
@@ -81,12 +81,12 @@ Removal log: {Step 4 removed_reasons}
 
 ## Behavioral Rules
 - Every MUST_FIX MUST get its own named section with Issue + Fix
-- SUGGESTIONS MUST be grouped by file — NEVER one section per finding
-- NITPICKS are a flat bullet list — no subheadings
-- If partial failures occurred: MUST add ⚠️ banner at top of report
-- Scope Summary section is ALWAYS included — even if APPROVED
-- NEVER use "you" or "your mistake" — findings are about CODE, not the person
-- If APPROVED with only nitpicks: lead with ✅ and keep tone positive
+- SUGGESTIONS MUST be grouped by file â€” NEVER one section per finding
+- NITPICKS are a flat bullet list â€” no subheadings
+- If partial failures occurred: MUST add âš ï¸ banner at top of report
+- Scope Summary section is ALWAYS included â€” even if APPROVED
+- NEVER use "you" or "your mistake" â€” findings are about CODE, not the person
+- If APPROVED with only nitpicks: lead with âœ… and keep tone positive
 
 ## Output Required
 Write the report file (format below), then return JSON:
@@ -116,24 +116,24 @@ Write the report file (format below), then return JSON:
 **Location:** `ai-workspace/reviews/pr-{id}-review.md`
 
 ````markdown
-# PR Review — #{pr_id}: {pr_branch}
+# PR Review â€” #{pr_id}: {pr_branch}
 
 | Field | Value |
 |---|---|
 | **Author** | {pr_author \| unknown} |
-| **Branch** | `{pr_branch}` → `{base_branch}` |
+| **Branch** | `{pr_branch}` â†’ `{base_branch}` |
 | **Reviewed at** | {ISO-8601} |
 | **Files changed** | {count} |
-| **Verdict** | 🔴 MUST FIX \| 🟡 NEEDS CHANGES \| ✅ APPROVED |
+| **Verdict** | ðŸ”´ MUST FIX \| ðŸŸ¡ NEEDS CHANGES \| âœ… APPROVED |
 
 {if partial_failure:}
-> ⚠️ **Partial review** — the following agents failed: {list}. Findings may be incomplete.
+> âš ï¸ **Partial review** â€” the following agents failed: {list}. Findings may be incomplete.
 
 ---
 
-## 🔴 Must Fix ({count})
+## ðŸ”´ Must Fix ({count})
 
-> Blocking issues — must be resolved before merge.
+> Blocking issues â€” must be resolved before merge.
 
 ### [{category}] {file}:{line}
 **Issue:** {finding}  
@@ -141,49 +141,49 @@ Write the report file (format below), then return JSON:
 
 ---
 
-## 🟡 Suggestions ({count})
+## ðŸŸ¡ Suggestions ({count})
 
 > Non-blocking but strongly recommended.
 
 ### {file}
-- **[{category}] line {line}:** {finding} → {suggestion}
+- **[{category}] line {line}:** {finding} â†’ {suggestion}
 
 ---
 
-## 🔵 Nitpicks ({count})
+## ðŸ”µ Nitpicks ({count})
 
 > Minor style / preference items. Author's discretion.
 
-- `{file}:{line}` — {finding}
+- `{file}:{line}` â€” {finding}
 
 ---
 
-## 📋 Scope Summary
+## ðŸ“‹ Scope Summary
 
-{scope_summary from Step 1 · Scope Analysis}
+{scope_summary from Step 1 Â· Scope Analysis}
 
 ---
 
-## ⚡ Performance
+## âš¡ Performance
 
 | Step | Agent | Duration | Tokens (in / out) | Notes |
 |------|-------|----------|-------------------|-------|
-| Setup | *(orchestrator)* | {setup.duration_ms} ms | — | fetch: {git_fetch_ms} ms · worktree: {worktree_create_ms} ms |
-| 1 · Scope Analysis | `gem-researcher` | {researcher.duration_ms} ms | {tokens_input} / {tokens_output} | {files_read} files read |
-| 2 · Architecture Critique | `gem-critic` | {critic.duration_ms} ms \| *skipped* | {tokens_input} / {tokens_output} \| — | {files_read} files read |
-| 3a · Code Review | `gem-reviewer` | {3a.duration_ms} ms | {tokens_input} / {tokens_output} | {findings_count} findings |
-| 3b · Security Review | `se-security-reviewer` | {3b.duration_ms} ms | {tokens_input} / {tokens_output} | {findings_count} findings · {owasp_passes} OWASP pass(es) |
-| 3c · FE Review | `fe-backstage-reviewer` | {3c.duration_ms} ms \| *skipped* | {tokens_input} / {tokens_output} \| — | {findings_count} findings · {files_reviewed_count} files |
-| 3 · Wall clock | *(parallel)* | **{wall_clock_ms} ms** | — | Parallel savings: {sum(3a,3b,3c) - wall_clock_ms} ms |
-| 4 · Signal Filter | `doublecheck` | {doublecheck.duration_ms} ms | {tokens_input} / {tokens_output} | {findings_in} in → {findings_out} out |
-| 5 · Verdict & Report | `review-coordinator` | {coordinator.duration_ms} ms | {tokens_input} / {tokens_output} | — |
-| **Total** | | **{totals.wall_clock_ms} ms** | **— / {totals.tokens_total}** | {totals.findings_raw} raw → {totals.findings_after_filter} filtered |
+| Setup | *(orchestrator)* | {setup.duration_ms} ms | â€” | fetch: {git_fetch_ms} ms Â· worktree: {worktree_create_ms} ms |
+| 1 Â· Scope Analysis | `gem-researcher` | {researcher.duration_ms} ms | {tokens_input} / {tokens_output} | {files_read} files read |
+| 2 Â· Architecture Critique | `gem-critic` | {critic.duration_ms} ms \| *skipped* | {tokens_input} / {tokens_output} \| â€” | {files_read} files read |
+| 3a Â· Code Review | `gem-reviewer` | {3a.duration_ms} ms | {tokens_input} / {tokens_output} | {findings_count} findings |
+| 3b Â· Security Review | `se-security-reviewer` | {3b.duration_ms} ms | {tokens_input} / {tokens_output} | {findings_count} findings Â· {owasp_passes} OWASP pass(es) |
+| 3c Â· FE Review | `fe-backstage-reviewer` | {3c.duration_ms} ms \| *skipped* | {tokens_input} / {tokens_output} \| â€” | {findings_count} findings Â· {files_reviewed_count} files |
+| 3 Â· Wall clock | *(parallel)* | **{wall_clock_ms} ms** | â€” | Parallel savings: {sum(3a,3b,3c) - wall_clock_ms} ms |
+| 4 Â· Signal Filter | `doublecheck` | {doublecheck.duration_ms} ms | {tokens_input} / {tokens_output} | {findings_in} in â†’ {findings_out} out |
+| 5 Â· Verdict & Report | `review-coordinator` | {coordinator.duration_ms} ms | {tokens_input} / {tokens_output} | â€” |
+| **Total** | | **{totals.wall_clock_ms} ms** | **â€” / {totals.tokens_total}** | {totals.findings_raw} raw â†’ {totals.findings_after_filter} filtered |
 
 > *All token counts are estimates. Parallel savings = sum of individual reviewer durations minus actual wall clock time for Step 3.*
 
 ---
 
-*Generated by review-orchestrator · {ISO-8601}*
+*Generated by review-orchestrator Â· {ISO-8601}*
 ````
 
 ---
@@ -192,13 +192,13 @@ Write the report file (format below), then return JSON:
 
 | Condition | Verdict | Icon |
 |-----------|---------|------|
-| Any `MUST_FIX` in filtered findings | `MUST_FIX` | 🔴 |
-| No `MUST_FIX`, but any `SUGGESTION` | `NEEDS_CHANGES` | 🟡 |
-| Only `NITPICK` or zero findings | `APPROVED` | ✅ |
+| Any `MUST_FIX` in filtered findings | `MUST_FIX` | ðŸ”´ |
+| No `MUST_FIX`, but any `SUGGESTION` | `NEEDS_CHANGES` | ðŸŸ¡ |
+| Only `NITPICK` or zero findings | `APPROVED` | âœ… |
 
 ---
 
-## Output Contract (Step 5 → Orchestrator)
+## Output Contract (Step 5 â†’ Orchestrator)
 
 ```json
 {
@@ -259,7 +259,7 @@ Orchestrator **computes totals** from all step metrics and writes to `state.metr
   },
   "findings_raw": 18,                // sum of findings_count from all reviewers
   "findings_after_filter": 15,       // doublecheck.findings_out
-  // ── Context Health ──────────────────────────────────────────────────────
+  // â”€â”€ Context Health â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   "context_efficiency_by_step": {    // tokens_output / tokens_input per step
     "researcher": 0.11,
     "critic": 0.07,
@@ -269,7 +269,7 @@ Orchestrator **computes totals** from all step metrics and writes to `state.metr
     "doublecheck": 0.17,
     "coordinator": 0.21
   },
-  "token_inflation_index": 1.4,      // max(tokens_input[stepN]) / tokens_input[step1] — target < 3
+  "token_inflation_index": 1.4,      // max(tokens_input[stepN]) / tokens_input[step1] â€” target < 3
   "context_budget_exceeded_steps": [] // list of steps that hit their token budget
 }
 ```
@@ -280,9 +280,9 @@ Orchestrator **computes totals** from all step metrics and writes to `state.metr
 
 | Failure | Policy |
 |---------|--------|
-| `review-coordinator` fails | ❌ **ESCALATE** — cannot produce report without synthesis |
-| `review-coordinator` times out | ❌ **ESCALATE** — same |
-| Report file write fails | ❌ **ESCALATE** — print report content to user directly as fallback, then cleanup |
+| `review-coordinator` fails | âŒ **ESCALATE** â€” cannot produce report without synthesis |
+| `review-coordinator` times out | âŒ **ESCALATE** â€” same |
+| Report file write fails | âŒ **ESCALATE** â€” print report content to user directly as fallback, then cleanup |
 
 ---
 
@@ -295,5 +295,5 @@ Orchestrator **computes totals** from all step metrics and writes to `state.metr
 | MUST_FIX | Direct and clear. State the risk explicitly. Provide the exact fix. |
 | Partial failure | Transparent. State clearly which agent failed and what was missed. |
 
-> ⚠️ Never use second-person language ("you did", "your code") — framing is code-centric, not person-centric.
+> âš ï¸ Never use second-person language ("you did", "your code") â€” framing is code-centric, not person-centric.
 
