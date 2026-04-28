@@ -24,7 +24,7 @@ Focused, precise, non-intrusive. Runs silently in the background while the user 
 Load only what is needed — do NOT load all files at once.
 
 1. **State file** — `ai-workspace/temp/review-state-pr-{id}.json` — read on EVERY invocation before anything else
-2. **Pipeline summary** — `ai-workspace/review-lifecycle/review-lifecycle-summary.md` — full pipeline spec, step index, worktree lifecycle, partial failure policy, verdict logic
+2. **Pipeline guide** — `ai-workspace/review-lifecycle/review-lifecycle-guide.md` — full pipeline spec, step index, worktree lifecycle, partial failure policy, verdict logic
 3. **Agent catalog** — `ai-workspace/agents-catalog.md` — agent descriptions and invocation patterns
 4. **Completion evidence** — `.claude/skills/verify/SKILL.md` — never claim review done without fresh output
 
@@ -61,7 +61,8 @@ One state file per PR. Created on start, updated after each pipeline step, never
     "researcher":        null,   // "done" | "failed" | null
     "code_reviewer":     null,
     "security_reviewer": null,
-    "fe_reviewer":       null,   // "done" | "failed" | "skipped" | null — auto-set by researcher scope
+    "fe_reviewer":       null,       // "done" | "failed" | "skipped" | null — auto-set by researcher scope
+    "regraph_reviewer":  null,       // "done" | "failed" | "skipped" | null — auto-set when regraph imports detected
     "doublecheck":       null,
     "coordinator":       null
   },
@@ -167,9 +168,10 @@ git fetch + worktree add
     ↓
 [B] gem-critic (conditional — "deep" keyword only)
     ↓
-[C] gem-reviewer ∥ se-security-reviewer ∥ fe-backstage-reviewer*   ← parallel (default)
-    gem-reviewer → se-security-reviewer → fe-backstage-reviewer*   ← sequential if "seq" active
+[C] gem-reviewer ∥ se-security-reviewer ∥ fe-backstage-reviewer* ∥ regraph-reviewer*   ← parallel (default)
+    gem-reviewer → se-security-reviewer → fe-backstage-reviewer* → regraph-reviewer*   ← sequential if "seq" active
     → * fe-backstage-reviewer: auto-triggered when researcher detects plugins/*/src/ files
+    → * regraph-reviewer: auto-triggered when researcher detects `import.*from 'regraph'`
     ↓ (wait for all active)
 [D] doublecheck             → filter false positives from all reviewers
     ↓
@@ -216,7 +218,7 @@ Task: Review architectural decisions, design patterns, coupling, abstractions.
 
 ## Step C — Code + Security Review
 
-> ⚡ **`seq` keyword:** If `seq` is active, run `gem-reviewer` → `se-security-reviewer` → `fe-backstage-reviewer` one at a time (cap = 1). Otherwise all active agents run in parallel (cap = 3 default; 4 with `fast`). `seq` overrides `fast`.
+> ⚡ **`seq` keyword:** If `seq` is active, run `gem-reviewer` → `se-security-reviewer` → `fe-backstage-reviewer` → `regraph-reviewer` one at a time (cap = 1). Otherwise all active agents run in parallel (cap = 3 default; 4 with `fast`). `seq` overrides `fast`.
 
 > 📦 **Findings accumulation (MANDATORY):** Regardless of `seq` or parallel mode, the Orchestrator **MUST** accumulate findings from each reviewer into a buffer as they complete. Step 4 (`doublecheck`) is invoked **exactly once** — only after ALL Step C agents have finished — receiving the combined findings buffer. Never pass partial findings to Step 4 mid-way through Step C.
 >
@@ -225,7 +227,8 @@ Task: Review architectural decisions, design patterns, coupling, abstractions.
 > findings_buffer = {
 >   "3a": null,   // set after gem-reviewer done
 >   "3b": null,   // set after se-security-reviewer done
->   "3c": null    // set after fe-backstage-reviewer done (or "skipped")
+>   "3c": null,   // set after fe-backstage-reviewer done (or "skipped")
+>   "3d": null    // set after regraph-reviewer done (or "skipped")
 > }
 > // → invoke Step 4 only when ALL expected entries are non-null
 > ```
@@ -288,6 +291,39 @@ Task: Review changed frontend plugin files for:
   ],
   "overall_impression": "string",
   "files_reviewed": ["plugins/..."],
+  "skipped_files": []
+}
+```
+
+### `regraph-reviewer` — ReGraph API Correctness (conditional)
+
+**Triggers automatically** when `gem-researcher` detects `import.*from '@cambridge-intelligence/regraph'` or `import.*from 'react-regraph'` in changed files.
+
+Set `state.pipeline.regraph_reviewer = "skipped"` and do NOT invoke when:
+- No ReGraph imports detected in changed files
+
+**Input:** worktree path + researcher output + list of changed ReGraph files
+
+Task: Review ReGraph API usage for correctness — NEVER rely on prior knowledge, ALWAYS query MCP first:
+1. Query `search_definitions` + `search_documentation` for each prop/component used
+2. Verify prop types against live MCP definitions
+3. Flag deprecated APIs, renamed props, wrong event signatures
+
+**Output JSON:**
+```jsonc
+{
+  "findings": [
+    {
+      "severity": "MUST_FIX|SUGGESTION|NITPICK",
+      "category": "deprecated-api|wrong-prop-type|renamed-prop|event-signature",
+      "location": "plugins/my-plugin/src/components/Graph.tsx:18",
+      "finding": "Description",
+      "suggestion": "Specific fix with correct API reference"
+    }
+  ],
+  "mcp_queries_made": 3,
+  "regraph_version_confirmed": "3.4",
+  "files_reviewed": [],
   "skipped_files": []
 }
 ```
@@ -438,8 +474,8 @@ START
   ↓ git fetch + worktree add  →  FAIL → ESCALATE (cannot setup worktree)
   ↓ gem-researcher             →  FAIL → ESCALATE (cannot parse diff)
   ↓ [gem-critic if deep]       →  FAIL → log to escalations[], continue
-  ↓ gem-reviewer ∥ se-security ∥ [fe-backstage-reviewer if plugins/*/src/ changed]   ← default (parallel)
-    gem-reviewer → se-security → [fe-backstage-reviewer]                              ← if "seq" active
+  ↓ gem-reviewer ∥ se-security ∥ [fe-backstage-reviewer if plugins/*/src/ changed] ∥ [regraph-reviewer if regraph imports detected]   ← default (parallel)
+    gem-reviewer → se-security → [fe-backstage-reviewer] → [regraph-reviewer]                                                             ← if "seq" active
                                →  1 FAILS → log, continue with the others
   ↓ doublecheck                →  FAIL → skip filter, use raw findings
   ↓ review-coordinator         →  FAIL → ESCALATE
@@ -449,6 +485,18 @@ END
 ```
 
 **Partial failure policy:** If a non-critical agent fails, log to `state.escalations[]` and continue — a partial review is more useful than no review. Always note partial results in the report header.
+
+| Agent fails | Policy |
+|---|---|
+| Worktree setup | ❌ **ESCALATE** — cannot proceed |
+| `gem-researcher` | ❌ **ESCALATE** — cannot proceed without scope context |
+| `gem-critic` (`deep`) | ⚠️ Log, continue without arch findings |
+| `gem-reviewer` | ⚠️ Log, continue with security + frontend + regraph findings |
+| `se-security-reviewer` | ⚠️ Log, continue with code + frontend + regraph findings |
+| `fe-backstage-reviewer` | ⚠️ Log, continue — note "BUI review skipped" in report header |
+| `regraph-reviewer` | ⚠️ Log, continue — note "ReGraph API correctness unverified" in report header |
+| `doublecheck` | ⚠️ Skip filter, use raw findings, note in report header |
+| `review-coordinator` | ❌ **ESCALATE** — cannot produce report |
 
 # Escalation Format
 
@@ -493,6 +541,7 @@ After pipeline completes, surface to user:
 | gem-reviewer        | 🔗 CoT   | 0.88 | 🟢 Effective |
 | se-security-reviewer| 🔄 SC    | 0.62 | 🟡 Partial   |
 | fe-backstage-reviewer| ⚛️ ReAct | 0.45 | 🔴 Weak     |
+| regraph-reviewer    | ⚛️ ReAct | 0.91 | 🟢 Effective |
 
 > Scores are advisory — they do not affect verdict. Sorted by score ascending.
 ```
@@ -527,7 +576,7 @@ Rules:
 - After every pipeline step: write updated state file before invoking next agent
 - Pass `scope_summary` from `gem-researcher` to ALL subsequent agents as context — prevents agents from reviewing code outside the PR scope
 - If `pr_author` is known: include in report header and avoid naming them negatively in findings — findings are about code, not people
-- Parallel cap: default 3 (`gem-reviewer` + `se-security-reviewer` + `fe-backstage-reviewer` when triggered); 4 with `fast` keyword; 2 when `fe-backstage-reviewer` is skipped; **1 with `seq` keyword** (`seq` overrides `fast`)
+- Parallel cap: default 4 (`gem-reviewer` + `se-security-reviewer` + `fe-backstage-reviewer` + `regraph-reviewer` when all triggered); 4 with `fast` keyword; adjusts down when conditional reviewers are skipped; **1 with `seq` keyword** (`seq` overrides `fast`)
 - `fe-backstage-reviewer` scope: pass only the changed files under `plugins/*/src/` — do not feed it backend or config files
-- **Step C → Step D handoff (MANDATORY):** Accumulate findings from each Step C reviewer into an internal buffer as they complete. Invoke `doublecheck` (Step D) **exactly once**, only after ALL active Step C agents have finished. Never invoke Step D with partial findings. The payload to Step D is identical regardless of `seq` or parallel mode: `{ "3a": findings[], "3b": findings[], "3c": findings[]|"skipped", "diff": "..." }`
+- **Step C → Step D handoff (MANDATORY):** Accumulate findings from each Step C reviewer into an internal buffer as they complete. Invoke `doublecheck` (Step D) **exactly once**, only after ALL active Step C agents have finished. Never invoke Step D with partial findings. The payload to Step D is identical regardless of `seq` or parallel mode: `{ "3a": findings[], "3b": findings[], "3c": findings[]|"skipped", "3d": findings[]|"skipped", "diff": "..." }`
 

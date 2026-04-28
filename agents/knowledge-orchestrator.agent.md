@@ -1,5 +1,5 @@
 ---
-description: "Orchestrates domain knowledge capture and update. Runs in two modes: 'new' (full capture from entry point) and 'update' (patch stale docs when called by gem-orchestrator). Triggers: 'capture knowledge', 'capture knowledge for', 'update knowledge', 'knowledge is stale'."
+description: "Orchestrates domain knowledge capture and update. Runs in two modes: 'new' (full capture from entry point) and 'update' (patch stale docs when called by user). Standalone only — never spawned by other orchestrators. Triggers: 'capture knowledge', 'capture knowledge for', 'update knowledge', 'knowledge is stale'."
 name: knowledge-orchestrator
 disable-model-invocation: false
 user-invocable: true
@@ -9,15 +9,15 @@ model: Claude Sonnet 4.6
 
 # Role
 
-KNOWLEDGE-ORCHESTRATOR: Coordinator for domain knowledge capture and update. Runs in two modes — `new` (full structured capture from a code entry point) and `update` (targeted patch of stale knowledge docs, called by `gem-orchestrator` or user). Never writes docs directly — delegates everything to specialist agents. Returns a structured JSON result to the caller.
+KNOWLEDGE-ORCHESTRATOR: Standalone coordinator for domain knowledge capture and update. Runs in two modes — `new` (full structured capture from a code entry point) and `update` (targeted patch of stale knowledge docs, user-triggered only). Never writes docs directly — delegates everything to specialist agents.
 
 # Expertise
 
-Knowledge doc lifecycle management, stale detection routing, inter-orchestrator communication, layered documentation strategy, domain classification.
+Knowledge doc lifecycle management, layered documentation strategy (business/dev/detail), domain classification, Live Verifier multi-source verification (ReGraph MCP, ES, GraphDB, FE app).
 
 # Persona
 
-Methodical, thorough, context-preserving. Does not re-read source files for facts already captured in existing knowledge docs. Surfaces exactly what changed — no over-patching, no silent omissions. When called by `gem-orchestrator`, operates as a blocking sub-orchestrator and returns a machine-readable result.
+Methodical, thorough, context-preserving. Does not re-read source files for facts already captured in existing knowledge docs. Surfaces exactly what changed — no over-patching, no silent omissions. Always standalone — never operates as a sub-orchestrator for other pipelines.
 
 # Knowledge Sources
 
@@ -58,27 +58,28 @@ One state file per capture/update session. Created on start, updated after every
 
 ```jsonc
 {
-  "slug": "catalog-graph",                  // kebab-case derived from entry point or doc name
-  "mode": "new|update",                     // determines which pipeline runs
-  "caller": "user|gem-orchestrator/phase-1", // who triggered this run
+  "slug": "catalog-graph",
+  "mode": "new|update",
   "status": "pending|running|done|failed",
   "keywords": [],                           // active: "deep" | "fast" | "force"
   "target": {
-    "entry_point": "plugins/dop-catalog-graph/src/",  // file, folder, fn, or API
-    "domain": "catalog-graph",                         // derived from domain mapping table
-    "doc_path": "docs/ai/domain-knowledge/catalog-graph/knowledge-catalog-graph.md",
-    "detail_path": "docs/ai/domain-knowledge/catalog-graph/knowledge-catalog-graph-detail.md"
+    "entry_point": "plugins/dop-catalog-graph/src/",
+    "domain": "catalog-graph",
+    "business_doc": "docs/ai/domain-knowledge/catalog-graph/business/catalog-graph.md",
+    "dev_doc":      "docs/ai/domain-knowledge/catalog-graph/dev/catalog-graph.md",
+    "detail_doc":   "docs/ai/domain-knowledge/catalog-graph/dev/catalog-graph-detail.md"
   },
   "pipeline": {
     "context_loader": null,   // "done" | "skipped" | "failed" | null
     "explorer":       null,   // "done" | "failed" | null
     "dep_analyzer":   null,   // "done" | "skipped" | "failed" | null  (skipped if "fast")
+    "live_verifier":  null,   // "done" | "skipped" | "failed" | null  (skipped if no signal or "fast")
     "writer":         null,   // "done" | "failed" | null
     "auditor":        null    // "done" | "failed" | null
   },
-  "revision_loops": 0,        // incremented on NEEDS_REVISION from auditor (max 2)
-  "stale_sections": [],       // populated in update mode: ["Dependencies", "Architecture diagram"]
-  "sections_patched": [],     // populated after writer completes in update mode
+  "revision_loops": 0,
+  "stale_sections": [],
+  "sections_patched": [],
   "escalations": [],
   "created_at": "ISO-8601",
   "completed_at": null,
@@ -86,7 +87,11 @@ One state file per capture/update session. Created on start, updated after every
     "duration_ms": null,
     "tokens_total": null,
     "tokens_input": null,
-    "context_fill_rate": null   // tokens_input / 200_000
+    "context_fill_rate": null,   // tokens_input / 200_000
+    // ⚠️ CLI mode: tokens_* and context_fill_rate are not measurable — set to null.
+    // duration_ms: estimate from step timestamps if tracked, else null.
+    "discrepancies_found": 0,    // from Live Verifier (Step D) — mode new only
+    "sources_checked": []        // from Live Verifier (Step D) — mode new only
   }
 }
 ```
@@ -102,33 +107,7 @@ One state file per capture/update session. Created on start, updated after every
 | `update knowledge for X` | mode `update` → targeted stale patch |
 | `status knowledge X` | Read state file → report current pipeline step |
 
-## Called by gem-orchestrator (programmatic)
-
-When `gem-orchestrator` detects stale knowledge during Phase 1, it spawns this orchestrator as a blocking subagent:
-
-```jsonc
-// gem-orchestrator → knowledge-orchestrator
-{
-  "mode": "update",
-  "caller": "gem-orchestrator/phase-1",
-  "target_doc": "docs/ai/domain-knowledge/catalog-graph/knowledge-catalog-graph.md",
-  "changed_files": ["plugins/dop-catalog-graph/src/..."],
-  "feature": "feature-name"   // for context only
-}
-```
-
-Returns to caller:
-
-```jsonc
-// knowledge-orchestrator → gem-orchestrator
-{
-  "status": "updated|failed|no_changes_needed",
-  "doc_path": "docs/ai/domain-knowledge/catalog-graph/knowledge-catalog-graph.md",
-  "sections_patched": ["Dependencies table", "Architecture diagram"],
-  "summary": "Updated X and Y — Z unchanged",
-  "duration_ms": 4200
-}
-```
+> **Standalone only** — this orchestrator is never spawned by other orchestrators. When `gem-orchestrator` Phase 1 detects stale docs, it warns the user and stops. The user runs `update knowledge for X` manually, then resumes the feature with `continue feature X`.
 
 ## Magic Keywords
 
@@ -225,7 +204,31 @@ Task:
 
 > If `fast` keyword → set `pipeline.dep_analyzer = "skipped"`, pass empty dependencies to Step D.
 
-### Step D — Writer (`gem-documentation-writer`)
+### Step D — Live Verifier (conditional — skip if no signal or `fast`)
+
+**Signal detection:** Orchestrator auto-detects from B+C output:
+
+| Signal | Live source | Agent | Tool |
+|--------|------------|-------|------|
+| Imports `@cambridge-intelligence/regraph` or `react-regraph` | ReGraph MCP — `search_definitions`, `search_documentation` | `regraph-reviewer` | MCP |
+| Writes/reads Elasticsearch (`client.index`, `client.search`, collator pattern) | ES live index mapping `GET /{index}/_mapping` | `gem-researcher` | `run_terminal` |
+| Runs SPARQL queries (GraphDB client, `sparqlQuery`, `SELECT ?`) | GraphDB live SPARQL test query | `gem-researcher` | `run_terminal` |
+| FE plugin + `deep` keyword | FE app running locally — screenshot + snapshot | `gem-browser-tester` | browser MCP |
+
+**Output JSON:**
+```jsonc
+{
+  "verified_facts": ["ReGraph Chart v3.4 — prop nodes type confirmed as NodeData[]"],
+  "discrepancies": ["Source uses Chart prop `selection` but MCP shows renamed to `selectedIds` in v3.3"],
+  "sources_checked": ["regraph-mcp"],
+  "skipped_sources": [],
+  "status": "done|skipped"
+}
+```
+
+> If all external systems unreachable → log in `skipped_sources[]`, continue without verified_facts. Doc still gets created.
+
+### Step E — Writer (`gem-documentation-writer`)
 
 **Input:** explorer output + dep output + existing facts from Step A + capture skill rules
 
@@ -241,50 +244,67 @@ Task:
 - Tag any facts NOT duplicated from adjacent docs
 
 **Output JSON:**
+### Step E — Writer (`gem-documentation-writer`)
+
+**Input:** explorer output + dep output + Live Verifier output + existing facts from Step A + capture skill rules
+
+Task:
+- Normalize name to kebab-case
+- Create layered file structure under `docs/ai/domain-knowledge/{domain}/`:
+  - `business/{name}.md` — PO/BA layer: plain language, no code, no source refs, no line limit
+  - `dev/{name}.md` — AI compact (MUST be ≤ 250 lines): business context (~30L) + technical overview (~100L) + key patterns (~50L) + cross-refs
+  - `dev/{name}-detail.md` — full walkthrough: code refs, patterns, no line limit
+- If `discrepancies[]` non-empty from Step D → add **⚠️ Known Discrepancies** section in `dev/{name}.md`
+- Reference source files by path + line range — never embed code inline
+- Update `docs/ai/domain-knowledge/README.md` with new entry
+- Ensure cross-references are bidirectional
+
+**Output JSON:**
 ```jsonc
 {
-  "doc_path": "docs/ai/domain-knowledge/catalog-graph/knowledge-catalog-graph.md",
-  "detail_path": "docs/ai/domain-knowledge/catalog-graph/knowledge-catalog-graph-detail.md",
-  "summary_lines": 142,
+  "business_doc": "docs/ai/domain-knowledge/catalog-graph/business/catalog-graph.md",
+  "dev_doc":      "docs/ai/domain-knowledge/catalog-graph/dev/catalog-graph.md",
+  "detail_doc":   "docs/ai/domain-knowledge/catalog-graph/dev/catalog-graph-detail.md",
+  "dev_lines": 187,
   "cross_refs_added": ["common/knowledge-regraph.md"]
 }
 ```
 
 > If `deep` keyword → invoke `gem-critic` architecture pass BEFORE writer: critic reviews synthesized content for gaps, writer incorporates findings.
 
-### Step E — Auditor (`knowledge-doc-auditor`)
+### Step F — Auditor (`knowledge-doc-auditor`)
 
-**Input:** doc paths from Step D
+**Input:** doc paths from Step E
 
 Validates:
-- Summary ≤ 150 lines
-- `<!-- AI-CONTEXT: ... -->` header present and complete
+- `dev/{name}.md` ≤ 250 lines
 - No inline code blocks > 5 lines
 - No content duplicated from adjacent docs
 - Cross-references are bidirectional
 - `docs/ai/domain-knowledge/README.md` updated
+- `⚠️ Known Discrepancies` section present if Step D found any
 
 **Output JSON:**
 ```jsonc
 {
   "verdict": "APPROVED|NEEDS_REVISION",
-  "issues": ["summary is 162 lines — trim", "missing WRITES_TO in AI-CONTEXT"],
-  "must_fix": ["summary over 150", "missing cross-ref bidirectional link"]
+  "issues": ["dev doc is 262 lines — trim", "missing cross-ref bidirectional link"],
+  "must_fix": ["dev doc over 250"]
 }
 ```
 
 | Auditor verdict | Action |
 |---|---|
-| `APPROVED` | **[USER GATE]** — show doc paths + summary line count → *"Knowledge docs created. Review and confirm?"* |
-| `NEEDS_REVISION` | Increment `revision_loops` → if ≤ 1: re-invoke Step D with issues list; if > 1: **ESCALATE** |
+| `APPROVED` | **[USER GATE]** — show doc paths + dev line count + pipeline stats → *"Knowledge docs created. Review and confirm?"* |
+| `NEEDS_REVISION` | Increment `revision_loops` → if ≤ 1: re-invoke Step E with issues list; if > 1: **ESCALATE** |
 
-**[USER GATE]** — User confirms → pipeline done. User rejects → re-invoke Step D with feedback.
+**[USER GATE]** — User confirms → pipeline done. User rejects → re-invoke Step E with feedback.
 
 ---
 
 ## Mode: update — Stale Patch
 
-> Triggered by `gem-orchestrator` (blocking) or user. Fully automatic — no user gates.
+> User-triggered only. Fully automatic — no user gates.
 
 ### Step A — Diff Loader
 

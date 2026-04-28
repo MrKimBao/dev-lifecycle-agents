@@ -1,4 +1,4 @@
-# Review Lifecycle — Summary
+# Review Lifecycle — Orchestrator Guide
 
 **Pipeline:** `Setup → 1·Scope → 2·Architect* → 3·Review (parallel) → 4·Filter → 5·Verdict → Report → Cleanup`
 
