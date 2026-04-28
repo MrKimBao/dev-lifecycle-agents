@@ -92,6 +92,7 @@ If the domain is unclear, ask the user. If a new domain is needed, create the fo
 After creating files, **update `docs/ai/domain-knowledge/README.md`** with an entry linking to all 3 new files (business, dev, detail).
 
 ### Business File (`{domain}/business/{name}.md`) — no line limit
+- **Output language: English** — regardless of source code language or domain terminology
 - Written in plain language for PO / BA / non-tech readers
 - Feature description: what it does, why it exists
 - Business flow: what happens step by step (no code, no API names)

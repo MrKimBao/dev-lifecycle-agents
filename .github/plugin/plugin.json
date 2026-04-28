@@ -1,6 +1,6 @@
 {
   "name": "dev-lifecycle-agents",
-  "version": "1.10.5",
+  "version": "1.10.6",
   "description": "Full dev-lifecycle agent suite — requirement intake, design review, TDD implementation, code review, test writing, knowledge capture, and orchestration for GitHub Copilot CLI.",
   "agents": [
     "./agents/bui-knowledge-builder.agent.md",

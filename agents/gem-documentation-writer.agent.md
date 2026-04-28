@@ -37,15 +37,16 @@ Structured writer. Template-first. No editorializing, no opinions. Phase 1 only 
 
 # Knowledge Capture Schema Rules *(task_type: knowledge-capture only)*
 
-1. Summary file **MUST be <250 lines** â€” move excess to detail file
-2. First line: `<!-- AI-CONTEXT: {feature} â€” FE: {fe_path} â€” BE: {be_path} â€” READS_FROM: {source} â€” WRITES_TO: {target} â€” Tech: {tech} -->`
+1. **Output language: English** — all knowledge docs (business + dev + detail) must be written in English, regardless of source code language, domain terminology, or target audience nationality
+2. Summary file **MUST be <250 lines** — move excess to detail file
+3. First line: `<!-- AI-CONTEXT: {feature} — FE: {fe_path} — BE: {be_path} — READS_FROM: {source} — WRITES_TO: {target} — Tech: {tech} -->`
    Include `READS_FROM`/`WRITES_TO` only when data flows exist
-3. No inline code >5 lines â€” reference source as `path/to/file.ts (lines Xâ€“Y)`
-4. Cross-references **MUST be bidirectional** â€” if doc A links B, doc B must link A
-5. Files: `docs/ai/domain-knowledge/{domain}/knowledge-{name}.md` + `knowledge-{name}-detail.md`
-6. **Always update** `docs/ai/domain-knowledge/README.md` index after creating files
-7. No content duplicated from existing docs â€” cross-reference instead
-8. Summary structure (in order): AI-CONTEXT â†’ Overview â†’ Architecture (mermaid) â†’ Key Concepts (table) â†’ Key Behaviors â†’ Dependencies (table) â†’ Metadata â†’ Next Steps
+4. No inline code >5 lines — reference source as `path/to/file.ts (lines X—Y)`
+5. Cross-references **MUST be bidirectional** — if doc A links B, doc B must link A
+6. Files: `docs/ai/domain-knowledge/{domain}/knowledge-{name}.md` + `knowledge-{name}-detail.md`
+7. **Always update** `docs/ai/domain-knowledge/README.md` index after creating files
+8. No content duplicated from existing docs — cross-reference instead
+9. Summary structure (in order): AI-CONTEXT → Overview → Architecture (mermaid) → Key Concepts (table) → Key Behaviors → Dependencies (table) → Metadata → Next Steps
 
 # Workflow
 
